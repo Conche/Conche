@@ -8,33 +8,47 @@ Group {
   $0.command("build") {
     do {
       let spec = try findPodspec()
+      let conchePath = Path(".conche")
 
       let source = FilesystemSource(path: Path("~/.cocoapods/repos/master").normalize())
       let resolver = DependencyResolver(specification: spec, sources: [source])
       let specifications = try resolver.resolve()
 
-      // Download Specifications
+      func dependencyPath(spec:Specification) -> Path {
+        let packagesPath = conchePath + "packages"
+        return packagesPath + spec.name
+      }
 
-      print("Building Dependencies")
-
-      for spec in specifications {
-        print("-> \(spec.name)")
-        let source = Path(".conche") + "packages" + spec.name
-        if !source.exists {
-          print("Source not found.")
-          exit(1)
+      if !spec.dependencies.isEmpty {
+        let downloadSources = specifications.filter { !dependencyPath($0).exists }
+        if !downloadSources.isEmpty {
+          print("Downloading Dependencies")
+          for spec in downloadSources {
+            print("-> \(spec.name)")
+            if let source = spec.source {
+              source.download(dependencyPath(spec))
+            } else {
+              print("git / tag source not found.")
+              exit(1)
+            }
+          }
         }
 
-        try spec.build(source, destination: Path(".conche"))
+        print("Building Dependencies")
+
+        for spec in specifications {
+          print("-> \(spec.name)")
+          try spec.build(dependencyPath(spec), destination: conchePath)
+        }
       }
 
       print("Building \(spec.name)")
-      try spec.build(Path.current, destination: Path(".conche"))
+      try spec.build(Path.current, destination: conchePath)
 
       if !spec.entryPoints.isEmpty {
         print("Building Entry Points")
 
-        let bindir = Path(".conche/bin")
+        let bindir = conchePath + "bin"
         if !bindir.exists {
           try bindir.mkdir()
         }
@@ -42,11 +56,13 @@ Group {
         let libraries = (specifications + [spec]).map { "-l\($0.name)" }.joinWithSeparator(" ")
 
         for (name, source) in spec.entryPoints {
-          print("-> \(name) -> .conche/bin/\(name)")
-          system("swiftc -I .conche/modules -L .conche/lib \(libraries) -o .conche/bin/\(name) \(source)")
+          let destination = bindir + name
+          let libdir = conchePath + "lib"
+          let modulesdir = conchePath + "modules"
+          print("-> \(name) -> \(destination)")
+          system("swiftc -I \(modulesdir) -L \(libdir) \(libraries) -o \(destination) \(source)")
         }
       }
-
     } catch {
       print(error)
       exit(1)
