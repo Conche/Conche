@@ -4,15 +4,21 @@ A native Swift build system and dependency manager.
 
 ## Usage
 
-Butter is used to build your Swift files wrapped in a podspec
+Conche uses information about your library described in it's podspec, including
+any dependencies.
 
 ```shell
 $ conche build
-Building Commander
+Downloading Dependencies
+-> PathKit 0.5.0
+-> Commander 0.5.0
+Building Dependencies
+-> PathKit
+-> Commander
+Building Conche
+Building Entry Points
+-> conche -> .conche/bin/conche
 ```
-
-Simply describe your sources and dependencies in a JSON podspec and Conche can
-build your Swift library.
 
 ```json
 {
@@ -29,20 +35,7 @@ build your Swift library.
 }
 ```
 
-*NOTE*: **`entry_points` is an extension to a podspec allowing you to define binary files.**
-
-```shell
-$ conche build
-Downloading Dependencies
--> PathKit 0.5.0
--> Commander 0.5.0
-Building Dependencies
--> PathKit
--> Commander
-Building Conche
-Building Entry Points
--> conche -> .conche/bin/conche
-```
+**NOTE**: *`entry_points` is an extension to a podspec allowing you to define binary files.*
 
 ## Installation
 
