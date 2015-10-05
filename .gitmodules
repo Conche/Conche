@@ -1,0 +1,6 @@
+[submodule ".conche/packages/Commander"]
+	path = .conche/packages/Commander
+	url = https://github.com/kylef/Commander
+[submodule ".conche/packages/PathKit"]
+	path = .conche/packages/PathKit
+	url = https://github.com/kylef/PathKit
