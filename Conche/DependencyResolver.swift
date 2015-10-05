@@ -3,8 +3,8 @@ enum DependencyResolverError : ErrorType, CustomStringConvertible {
 
   var description:String {
     switch self {
-    case .NoSuchDependency(let dependency, let requiredBy):
-      return "Dependency \(dependency) not found."
+    case .NoSuchDependency(let dependency):
+      return "Dependency \(dependency.0) not found."
     }
   }
 }
@@ -27,7 +27,7 @@ public class DependencyResolver {
   // @segiddins, do NOT enter here.
   private func resolve(specification:Specification) throws -> [Specification] {
     let dependencies = try specification.dependencies.map { try resolve($0) }
-    return dependencies.reduce([], combine: +) + [specification]
+    return dependencies.reduce([], combine: +)
   }
 
   private func resolve(dependency:Dependency) throws -> [Specification] {

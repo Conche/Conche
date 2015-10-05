@@ -15,23 +15,38 @@ Group {
 
       // Download Specifications
 
-      for specification in specifications {
-        print("Building '\(specification.name)'")
+      print("Building Dependencies")
 
-        let source:Path
-        if spec.name == specification.name {
-          source = Path.current
-        } else {
-          source = Path(".conche") + "packages" + specification.name
-        }
-
+      for spec in specifications {
+        print("-> \(spec.name)")
+        let source = Path(".conche") + "packages" + spec.name
         if !source.exists {
           print("Source not found.")
           exit(1)
         }
 
-        try specification.build(source, destination: Path(".conche"))
+        try spec.build(source, destination: Path(".conche"))
       }
+
+      print("Building \(spec.name)")
+      try spec.build(Path.current, destination: Path(".conche"))
+
+      if !spec.entryPoints.isEmpty {
+        print("Building Entry Points")
+
+        let bindir = Path(".conche/bin")
+        if !bindir.exists {
+          try bindir.mkdir()
+        }
+
+        let libraries = (specifications + [spec]).map { "-l\($0.name)" }.joinWithSeparator(" ")
+
+        for (name, source) in spec.entryPoints {
+          print("-> \(name) -> .conche/bin/\(name)")
+          system("swiftc -I .conche/modules -L .conche/lib \(libraries) -o .conche/bin/\(name) \(source)")
+        }
+      }
+
     } catch {
       print(error)
       exit(1)

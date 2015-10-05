@@ -19,12 +19,17 @@ build your Swift library.
   "name": "Conche",
   "version": "1.0.0",
   "source_files": "Conche/*.swift",
+  "entry_points": {
+    "conche": "bin/conche.swift"
+  },
   "dependencies": {
     "Commander": [ "~> 0.5.0" ],
     "PathKit": [ "~> 0.5.0" ]
   }
 }
 ```
+
+*NOTE*: **`entry_points` is an extension to a podspec allowing you to define binary files.**
 
 ```shell
 $ conche build
@@ -35,6 +40,8 @@ Building Dependencies
 -> PathKit
 -> Commander
 Building Conche
+Building Entry Points
+-> conche -> .conche/bin/conche
 ```
 
 ## Installation

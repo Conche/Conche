@@ -5,7 +5,10 @@
     "type": "BSD",
     "file": "LICENSE"
   },
-  "source_files": "Conche/*.swift",
+  "source_files": ["Conche/*.swift"],
+  "entry_points": {
+    "conche": "bin/conche.swift"
+  },
   "dependencies": {
     "Commander": [
       "~> 0.5.0"

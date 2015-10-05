@@ -7,6 +7,7 @@ public struct Specification {
   public let version:String
   public let sourceFiles:[String]
   public let dependencies:[Dependency]
+  public let entryPoints:[String:String]
 }
 
 
@@ -31,6 +32,7 @@ extension Specification {
       self.name = name
       self.version = version
       self.dependencies = parseDependencies(spec["dependencies"] as? [String:[String]] ?? [:])
+      self.entryPoints = spec["entry_points"] as? [String:String] ?? [:]
     } else {
       // TODO fail on subspecs and unsupported vendored_*, resources etc
       throw Error("Invalid podspec")
@@ -73,8 +75,8 @@ public func findPodspec() throws -> Specification {
 
 extension Specification {
   public func build(source:Path, destination:Path) throws {
-    var sourceFiles = try self.sourceFiles.reduce([Path]()) { (accumulator, file) in
-      let files = try source.glob(file)
+    var sourceFiles = self.sourceFiles.reduce([Path]()) { (accumulator, file) in
+      let files = source.glob(file)
       return accumulator + files
     }
 
