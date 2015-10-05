@@ -1,0 +1,13 @@
+machine:
+  xcode:
+    version: "7.0"
+
+checkout:
+  post:
+    - git submodule init 
+    - git submodule update
+
+test:
+  override:
+    - make
+
