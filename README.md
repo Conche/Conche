@@ -39,7 +39,22 @@ Building Entry Points
 
 ## Installation
 
-Todo.
+### Homebrew
+
+```shell
+$ git clone --recursive https://github.com/kylef/Conche
+$ cd Conche
+$ make DESTDIR=/usr/local/Cellar/Conche/HEAD install
+$ brew link conche
+```
+
+### Other
+
+```shell
+$ git clone --recursive https://github.com/kylef/Conche
+$ cd Conche
+$ make install
+```
 
 ## Status
 
