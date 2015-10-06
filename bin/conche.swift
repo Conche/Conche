@@ -1,4 +1,5 @@
 import Darwin
+import PathKit
 import Commander
 import Conche
 
@@ -11,6 +12,12 @@ Group {
       print(error)
       exit(1)
     }
+  }
+
+  $0.command("exec") { (command:String, parser:ArgumentParser) in
+    let exec = "\(command) \(parser)"
+    let conchePath = Path(".conche").absolute() + "bin"
+    system("PATH=\(conchePath) \(exec)")
   }
 }.run()
 
