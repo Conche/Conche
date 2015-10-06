@@ -9,6 +9,10 @@ Group {
     do {
       let spec = try findPodspec()
       let conchePath = Path(".conche")
+      if !conchePath.exists {
+        try conchePath.mkdir()
+      }
+
 
       let source = FilesystemSource(path: Path("~/.cocoapods/repos/master").normalize())
       let resolver = DependencyResolver(specification: spec, sources: [source])
