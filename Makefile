@@ -1,3 +1,4 @@
+DESTDIR := /usr/local
 DEPENDENCIES=Commander PathKit
 LIBS=$(addprefix lib, $(DEPENDENCIES))
 SWIFTFLAGS=$(addprefix -l, $(DEPENDENCIES))
@@ -18,4 +19,10 @@ lib%:
 	@mkdir -p .conche/lib
 	@echo "Building $*"
 	@swiftc -module-name $* -emit-library -emit-module -emit-module-path .conche/modules/$*.swiftmodule .conche/packages/$*/$*/*.swift -o .conche/lib/lib$*.dylib
+
+install: build
+	mkdir -p "$(DESTDIR)/bin/"
+	mkdir -p "$(DESTDIR)/lib/"
+	cp -f "bin/conche" "$(DESTDIR)/bin/"
+	cp -fr ".conche/lib/" "$(DESTDIR)/lib/"
 
