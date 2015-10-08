@@ -9,7 +9,8 @@ public func build() throws {
     try conchePath.mkdir()
   }
 
-  let source = FilesystemSource(path: Path("~/.cocoapods/repos/master").normalize())
+  let source = GitFilesystemSource(name: "CocoaPods", uri: "https://github.com/CocoaPods/Specs")
+  try source.update()
   let resolver = DependencyResolver(specification: spec, sources: [source])
   let specifications = try resolver.resolve()
 

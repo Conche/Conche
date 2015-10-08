@@ -1,16 +1,20 @@
+import Darwin
 import PathKit
 
 
 public protocol SourceType {
   func search(dependency:Dependency) -> [Specification]
+  func update() throws
 }
 
 
-public class FilesystemSource : SourceType {
-  let path:Path
+public class GitFilesystemSource : SourceType {
+  let name:String
+  let uri:String
 
-  public init(path:Path) {
-    self.path = path
+  public init(name:String, uri:String) {
+    self.name = name
+    self.uri = uri
   }
 
   // TODO, silent error handling
@@ -28,6 +32,21 @@ public class FilesystemSource : SourceType {
         return nil
       }
     } ?? []
+  }
+
+  var path:Path {
+    return Path("~/.conche/sources/\(name)").normalize()
+  }
+
+  public func update() throws {
+    let destination = path
+    if destination.exists {
+      path.chdir {
+        system("git pull \(uri) master")
+      }
+    } else {
+      system("git clone --depth 1 \(uri) \(path)")
+    }
   }
 }
 
