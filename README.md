@@ -56,6 +56,10 @@ $ make DESTDIR=/usr/local/Cellar/Conche/HEAD install
 $ brew link conche
 ```
 
+##### Why don't you have a formula?
+
+Conche is still alpha and this will be made when we're ready.
+
 ### Other
 
 ```shell
@@ -96,4 +100,9 @@ is finally opened sourced. See [#7](https://github.com/kylef/Conche/issues/7).
 
 Not yet, but in the future you may be able to. Only CLI tools and libraries are
 supported.
+
+#### Why don't you support X?
+
+Either we don't want to or we haven't got round to implementing it yet. Pull
+requests are welcome.
 
