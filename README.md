@@ -106,3 +106,7 @@ supported.
 Either we don't want to or we haven't got round to implementing it yet. Pull
 requests are welcome.
 
+#### Can Conche build Conche?
+
+Of course.
+
