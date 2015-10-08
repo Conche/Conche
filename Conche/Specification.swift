@@ -15,7 +15,7 @@ public struct Specification {
   public let source:GitSource?
   public let sourceFiles:[String]
   public let dependencies:[Dependency]
-  public let entryPoints:[String:String]
+  public let entryPoints:[String:[String:String]]
 }
 
 
@@ -48,7 +48,7 @@ extension Specification {
       self.name = name
       self.version = version
       self.dependencies = parseDependencies(spec["dependencies"] as? [String:[String]] ?? [:])
-      self.entryPoints = spec["entry_points"] as? [String:String] ?? [:]
+      self.entryPoints = spec["entry_points"] as? [String:[String:String]] ?? [:]
       self.source = parseSource(spec["source"] as? [String:String])
     } else {
       // TODO fail on subspecs and unsupported vendored_*, resources etc

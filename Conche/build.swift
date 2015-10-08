@@ -44,22 +44,24 @@ public func build() throws {
   print("Building \(spec.name)")
   try spec.build(Path.current, destination: conchePath)
 
-  if !spec.entryPoints.isEmpty {
-    print("Building Entry Points")
+  if let cliEntryPoints = spec.entryPoints["cli"] {
+    if !cliEntryPoints.isEmpty {
+      print("Building Entry Points")
 
-    let bindir = conchePath + "bin"
-    if !bindir.exists {
-      try bindir.mkdir()
-    }
+      let bindir = conchePath + "bin"
+      if !bindir.exists {
+        try bindir.mkdir()
+      }
 
-    let libraries = (specifications + [spec]).map { "-l\($0.name)" }.joinWithSeparator(" ")
+      let libraries = (specifications + [spec]).map { "-l\($0.name)" }.joinWithSeparator(" ")
 
-    for (name, source) in spec.entryPoints {
-      let destination = bindir + name
-      let libdir = conchePath + "lib"
-      let modulesdir = conchePath + "modules"
-      print("-> \(name) -> \(destination)")
-      system("swiftc -I \(modulesdir) -L \(libdir) \(libraries) -o \(destination) \(source)")
+      for (name, source) in cliEntryPoints {
+        let destination = bindir + name
+        let libdir = conchePath + "lib"
+        let modulesdir = conchePath + "modules"
+        print("-> \(name) -> \(destination)")
+        system("swiftc -I \(modulesdir) -L \(libdir) \(libraries) -o \(destination) \(source)")
+      }
     }
   }
 }

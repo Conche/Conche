@@ -26,7 +26,9 @@ Building Entry Points
   "version": "1.0.0",
   "source_files": "Conche/*.swift",
   "entry_points": {
-    "conche": "bin/conche.swift"
+    "cli": {
+      "conche": "bin/conche.swift"
+    }
   },
   "dependencies": {
     "Commander": [ "~> 0.5.0" ],
@@ -35,7 +37,13 @@ Building Entry Points
 }
 ```
 
-**NOTE**: *`entry_points` is an extension to a podspec allowing you to define binary files.*
+**NOTE**: *`entry_points` is an extension to a podspec allowing you to create CLIs.*
+
+You can execute your tool via `conche` after built.
+
+```shell
+$ conche exec <NAME>
+```
 
 ## Installation
 
