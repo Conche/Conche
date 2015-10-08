@@ -92,3 +92,8 @@ Currently it does not, however it's built with other operating systems
 in-mind and it would be trivial to add support for other platforms once Swift
 is finally opened sourced. See [#7](https://github.com/kylef/Conche/issues/7).
 
+#### Can I build an OS X, iOS, watchOS, tvOS application with Conche?
+
+Not yet, but in the future you may be able to. Only CLI tools and libraries are
+supported.
+
