@@ -26,6 +26,9 @@ clean:
 	@echo "Building $*"
 	@swiftc -module-name $* -emit-library -emit-module -emit-module-path .conche/modules/$*.swiftmodule .conche/packages/$*/$*/*.swift -o .conche/lib/lib$*.dylib
 
+test: bin/conche
+	@./bin/conche test
+
 install: bin/conche
 	mkdir -p "$(DESTDIR)/bin/"
 	mkdir -p "$(DESTDIR)/lib/"
