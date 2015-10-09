@@ -4,3 +4,6 @@
 [submodule ".conche/packages/PathKit"]
 	path = .conche/packages/PathKit
 	url = https://github.com/kylef/PathKit
+[submodule ".conche/packages/Spectre"]
+	path = .conche/packages/Spectre
+	url = https://github.com/kylef/Spectre

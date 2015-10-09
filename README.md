@@ -45,6 +45,14 @@ You can execute your tool via `conche` after built.
 $ conche exec <NAME>
 ```
 
+### Testing
+
+You can use Conche in conjunction with the [Spectre](https://github.com/kylef/Spectre) BDD testing library.
+
+```shell
+$ conche test
+```
+
 ## Installation
 
 ### Homebrew

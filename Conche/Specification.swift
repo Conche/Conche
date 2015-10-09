@@ -7,6 +7,23 @@ public struct GitSource {
 }
 
 
+public struct TestSpecification {
+  public let sourceFiles:[String]
+  public let dependencies:[Dependency]
+
+  public init(spec:[String:AnyObject]) throws {
+    if let sourceFiles = spec["source_files"] as? [String] {
+      self.sourceFiles = sourceFiles
+    } else if let sourceFiles = spec["source_files"] as? String {
+      self.sourceFiles = [sourceFiles]
+    } else {
+      throw Error("Invalid test specification. Missing source files.")
+    }
+
+    self.dependencies = parseDependencies(spec["dependencies"] as? [String:[String]] ?? [:])
+  }
+}
+
 public struct Specification {
   public let name:String
   public let version:String
@@ -16,6 +33,18 @@ public struct Specification {
   public let sourceFiles:[String]
   public let dependencies:[Dependency]
   public let entryPoints:[String:[String:String]]
+
+  public let testSpecification:TestSpecification?
+
+  public init(name:String, version:String) {
+    self.name = name
+    self.version = version
+    self.source = nil
+    self.sourceFiles = []
+    self.dependencies = []
+    self.entryPoints = [:]
+    self.testSpecification = nil
+  }
 }
 
 
@@ -50,6 +79,11 @@ extension Specification {
       self.dependencies = parseDependencies(spec["dependencies"] as? [String:[String]] ?? [:])
       self.entryPoints = spec["entry_points"] as? [String:[String:String]] ?? [:]
       self.source = parseSource(spec["source"] as? [String:String])
+      if let testSpecification = spec["test_spec"] as? [String:AnyObject] {
+        self.testSpecification = try TestSpecification(spec: testSpecification)
+      } else {
+        self.testSpecification = nil
+      }
     } else {
       // TODO fail on subspecs and unsupported vendored_*, resources etc
       throw Error("Invalid podspec")

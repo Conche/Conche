@@ -30,6 +30,12 @@ public class DependencyResolver {
     return dependencies.reduce([], combine: +)
   }
 
+  func resolveTestDependencies() throws -> [Specification] {
+    let dependencies = try specification.dependencies.map { try resolve($0) }
+    let testDependencies = try specification.testSpecification?.dependencies.map { try resolve($0) } ?? []
+    return (dependencies + testDependencies).reduce([], combine: +)
+  }
+
   private func resolve(dependency:Dependency) throws -> [Specification] {
     // TODO, handle circular dependencies instead of infinitely loop :D
 

@@ -1,6 +1,35 @@
 import Darwin
 import PathKit
 
+func dependencyPath(conchePath:Path, _ spec:Specification) -> Path {
+  let packagesPath = conchePath + "packages"
+  return packagesPath + spec.name
+}
+
+func downloadDependencies(conchePath:Path, specifications:[Specification]) throws {
+  let downloadSources = specifications.filter { !dependencyPath(conchePath, $0).exists }
+  if !downloadSources.isEmpty {
+    print("Downloading Dependencies")
+    for spec in downloadSources {
+      print("-> \(spec.name)")
+      if let source = spec.source {
+        source.download(dependencyPath(conchePath, spec))
+      } else {
+        print("git / tag source not found.")
+        exit(1)
+      }
+    }
+  }
+}
+
+func buildDependencies(conchePath: Path, specifications:[Specification]) throws {
+  print("Building Dependencies")
+
+  for spec in specifications {
+    print("-> \(spec.name)")
+    try spec.build(dependencyPath(conchePath, spec), destination: conchePath)
+  }
+}
 
 public func build() throws {
   let spec = try findPodspec()
@@ -14,32 +43,9 @@ public func build() throws {
   let resolver = DependencyResolver(specification: spec, sources: [source])
   let specifications = try resolver.resolve()
 
-  func dependencyPath(spec:Specification) -> Path {
-    let packagesPath = conchePath + "packages"
-    return packagesPath + spec.name
-  }
-
   if !spec.dependencies.isEmpty {
-    let downloadSources = specifications.filter { !dependencyPath($0).exists }
-    if !downloadSources.isEmpty {
-      print("Downloading Dependencies")
-      for spec in downloadSources {
-        print("-> \(spec.name)")
-        if let source = spec.source {
-          source.download(dependencyPath(spec))
-        } else {
-          print("git / tag source not found.")
-          exit(1)
-        }
-      }
-    }
-
-    print("Building Dependencies")
-
-    for spec in specifications {
-      print("-> \(spec.name)")
-      try spec.build(dependencyPath(spec), destination: conchePath)
-    }
+    try downloadDependencies(conchePath, specifications: specifications)
+    try buildDependencies(conchePath, specifications: specifications)
   }
 
   print("Building \(spec.name)")

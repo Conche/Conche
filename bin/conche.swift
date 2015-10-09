@@ -9,6 +9,10 @@ Group {
     try build()
   }
 
+  $0.command("test") {
+    try test()
+  }
+
   $0.command("exec") { (command:String, parser:ArgumentParser) in
     let exec = "\(command) \(parser)"
     let conchePath = Path(".conche").absolute() + "bin"
