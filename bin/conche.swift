@@ -6,12 +6,7 @@ import Conche
 
 Group {
   $0.command("build") {
-    do {
-      try build()
-    } catch {
-      print(error)
-      exit(1)
-    }
+    try build()
   }
 
   $0.command("exec") { (command:String, parser:ArgumentParser) in
