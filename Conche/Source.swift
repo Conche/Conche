@@ -20,18 +20,21 @@ public class GitFilesystemSource : SourceType {
   // TODO, silent error handling
   public func search(dependency:Dependency) -> [Specification] {
     let children = try? (path + "Specs" + dependency.name).children()
-    let versions = children ?? []
-    let files = versions.map { path in
+    let podspecs = (children ?? []).map { path in
       return path + "\(dependency.name).podspec.json"
     }
-    return files.flatMap { path in
-      do {
-        return try Specification(path: path)
-      } catch {
-        print("\(path): \(error)")
-        return nil
-      }
-    } ?? []
+
+    return podspecs.flatMap(loadFile)
+  }
+
+
+  func loadFile(path:Path) -> Specification? {
+    do {
+      return try Specification(path: path)
+    } catch {
+      print("\(path): \(error)")
+      return nil
+    }
   }
 
   var path:Path {
