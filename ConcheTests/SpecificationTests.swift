@@ -2,7 +2,7 @@ import Spectre
 import Conche
 
 
-describe("a specification") {
+describe("Specification") {
   var specification = Specification(name: "Conche", version: "1.0.0")
 
   $0.it("has a name") {

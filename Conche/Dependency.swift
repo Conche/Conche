@@ -1,19 +1,19 @@
 public struct Dependency : CustomStringConvertible {
-  public let name:String
-  public let requirements:[String]
+  public let name: String
+  public let requirements: [String]
 
-  init(name:String, requirements:[String]) {
+  public init(name: String, requirements: [String]? = nil) {
     self.name = name
-    self.requirements = requirements
+    self.requirements = requirements ?? []
   }
 
-  public var description:String {
+  public var description: String {
     if requirements.isEmpty {
       return name
     }
 
-    let x = requirements.joinWithSeparator(", ")
-    return "\(name) (\(x))"
+    let requires = requirements.joinWithSeparator(", ")
+    return "\(name) (\(requires))"
   }
 }
 
