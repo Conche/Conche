@@ -41,21 +41,17 @@ public func test() throws {
 
     print("Building test")
     let swiftFlags = "-I .conche/modules -L .conche/lib \(flags)"
-    let test = Path(".conche/tests.swift")
-    var output = "#!/usr/bin/env swift \(swiftFlags)\n\nimport Spectre\n\n"
+    let test = Path(".conche/test.swift")
+    var output = ""
     for file in testFiles {
       output += try file.read()
     }
-    output += "\nSpectre.run()\n"
     try test.write(output)
-    system("chmod +x \(test)")
+    system("swiftc \(swiftFlags) -o .conche/test \(test)")
 
     print("Running Tests")
-    system("\(test.absolute())")
+    system("./.conche/test")
   } else {
     throw Error("No test specification found in \(spec.name).")
   }
 }
-
-
-
