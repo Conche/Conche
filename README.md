@@ -1,5 +1,7 @@
 # Conche
 
+[![Build Status](http://img.shields.io/travis/kylef/Conche/master.svg?style=flat)](https://travis-ci.org/kylef/Conche)
+
 A native Swift build system and dependency manager.
 
 ## Usage

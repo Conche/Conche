@@ -1,6 +1,7 @@
 DESTDIR := /usr/local
 DEPENDENCIES = Commander PathKit
 LIBS = $(foreach lib,$(DEPENDENCIES),.conche/lib/lib$(lib).dylib)
+SWIFTC := swiftc
 SWIFTFLAGS = $(addprefix -l, $(DEPENDENCIES))
 
 SOURCES = Dependency DependencyResolver Downloader Source Specification build test
@@ -11,20 +12,20 @@ all: bin/conche
 
 bin/conche: .conche/lib/libConche.dylib bin/conche.swift
 	@echo "Building bin/conche"
-	@swiftc -I .conche/modules -L .conche/lib $(SWIFTFLAGS) -lConche -o bin/conche bin/conche.swift
+	@$(SWIFTC) -I .conche/modules -L .conche/lib $(SWIFTFLAGS) -lConche -o bin/conche bin/conche.swift
 
 clean:
 	rm -fr .conche/modules .conche/lib
 
 .conche/lib/libConche.dylib: $(LIBS) $(SOURCE_FILES)
 	@echo "Building Conche"
-	@swiftc $(SWIFTFLAGS) -I .conche/modules -L .conche/lib -module-name Conche -emit-library -emit-module -emit-module-path .conche/modules/Conche.swiftmodule $(SOURCE_FILES) -o .conche/lib/libConche.dylib
+	@$(SWIFTC) $(SWIFTFLAGS) -I .conche/modules -L .conche/lib -module-name Conche -emit-library -emit-module -emit-module-path .conche/modules/Conche.swiftmodule $(SOURCE_FILES) -o .conche/lib/libConche.dylib
 
 .conche/lib/lib%.dylib:
 	@mkdir -p .conche/modules
 	@mkdir -p .conche/lib
 	@echo "Building $*"
-	@swiftc -module-name $* -emit-library -emit-module -emit-module-path .conche/modules/$*.swiftmodule .conche/packages/$*/$*/*.swift -o .conche/lib/lib$*.dylib
+	@$(SWIFTC) -module-name $* -emit-library -emit-module -emit-module-path .conche/modules/$*.swiftmodule .conche/packages/$*/$*/*.swift -o .conche/lib/lib$*.dylib
 
 test: bin/conche
 	@./bin/conche test
