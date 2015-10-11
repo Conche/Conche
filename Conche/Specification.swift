@@ -6,20 +6,12 @@ public struct GitSource {
   public let tag:String
 }
 
-
 public struct TestSpecification {
   public let sourceFiles:[String]
   public let dependencies:[Dependency]
 
   public init(spec:[String:AnyObject]) throws {
-    if let sourceFiles = spec["source_files"] as? [String] {
-      self.sourceFiles = sourceFiles
-    } else if let sourceFiles = spec["source_files"] as? String {
-      self.sourceFiles = [sourceFiles]
-    } else {
-      throw Error("Invalid test specification. Missing source files.")
-    }
-
+    self.sourceFiles = try parseSourceFiles(spec["source_files"])
     self.dependencies = parseDependencies(spec["dependencies"] as? [String:[String]] ?? [:])
   }
 }
@@ -62,42 +54,62 @@ func parseSource(source:[String:String]?) -> GitSource? {
   return nil
 }
 
-extension Specification {
-  public init(spec:[String:AnyObject]) throws {
-    if let sourceFiles = spec["source_files"] as? [String] {
-      self.sourceFiles = sourceFiles
-    } else if let sourceFiles = spec["source_files"] as? String {
-      self.sourceFiles = [sourceFiles]
-    } else {
-      throw Error("Invalid podspec. Missing source files.")
+enum SpecificationError : ErrorType {
+  case MissingField(String)
+  case IncorrectType(key: String)
+  case Unsupported(String)
+}
+
+func validate<T>(source:[String:AnyObject], _ key:String) throws -> T {
+  if let value = source[key] {
+    if let value = value as? T {
+      return value
     }
 
-    if let name = spec["name"] as? String,
-           version = spec["version"] as? String {
-      self.name = name
-      self.version = version
-      self.dependencies = parseDependencies(spec["dependencies"] as? [String:[String]] ?? [:])
-      self.entryPoints = spec["entry_points"] as? [String:[String:String]] ?? [:]
-      self.source = parseSource(spec["source"] as? [String:String])
-      if let testSpecification = spec["test_spec"] as? [String:AnyObject] {
-        self.testSpecification = try TestSpecification(spec: testSpecification)
-      } else {
-        self.testSpecification = nil
-      }
+    throw SpecificationError.IncorrectType(key: key)
+  }
+
+  throw SpecificationError.MissingField(key)
+}
+
+extension Specification {
+  public init(representation: [String:AnyObject]) throws {
+    name = try validate(representation, "name")
+    version = try validate(representation, "version")
+    sourceFiles = try parseSourceFiles(representation["source_files"])
+    dependencies = parseDependencies(representation["dependencies"] as? [String:[String]] ?? [:])
+    entryPoints = representation["entry_points"] as? [String:[String:String]] ?? [:]
+    source = parseSource(representation["source"] as? [String:String])
+
+    if let testSpecification = representation["test_spec"] as? [String:AnyObject] {
+      self.testSpecification = try TestSpecification(spec: testSpecification)
     } else {
-      // TODO fail on subspecs and unsupported vendored_*, resources etc
-      throw Error("Invalid podspec")
+      self.testSpecification = nil
+    }
+
+    if representation.keys.contains("subspecs") {
+      throw SpecificationError.Unsupported("subspecs")
     }
   }
 
   public init(path:Path) throws {
     let data = try NSJSONSerialization.JSONObjectWithData(try path.read(), options: NSJSONReadingOptions(rawValue: 0))
     if let data = data as? [String:AnyObject] {
-      try self.init(spec: data)
+      try self.init(representation: data)
     } else {
-      throw Error("Invalid podspec")
+      throw Error("Podspec does not contain a dictionary.")
     }
   }
+}
+
+func parseSourceFiles(sourceFiles: Any?) throws -> [String] {
+  if let sourceFile = sourceFiles as? String {
+    return [sourceFile]
+  } else if let sourceFiles = sourceFiles as? [String] {
+    return sourceFiles
+  }
+
+  return []
 }
 
 
