@@ -166,10 +166,8 @@ extension Specification {
     let module = moduledir + "\(name).swiftmodule"
 
     // TODO, respect specifications module name
-    // TODO, shell-escape
     // TODO support spec's frameworks
-    let command = "swiftc -I \(moduledir) -L \(libdir) \(libraries) -module-name \(name) -emit-library -emit-module -emit-module-path \(module) \(source) -o \(library)"
-    system(command)
+    try swiftc(["-I", moduledir.description, "-L", libdir.description, libraries, "-module-name", name, "-emit-library", "-emit-module", "-emit-module-path", module.description, source, "-o", library.description])
   }
 }
 
