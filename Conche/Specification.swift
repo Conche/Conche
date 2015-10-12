@@ -137,13 +137,24 @@ public func findPodspec() throws -> Specification {
 
 
 extension Specification {
-  public func build(source:Path, destination:Path) throws {
-    var sourceFiles = self.sourceFiles.reduce([Path]()) { (accumulator, file) in
-      let files = source.glob(file)
-      return accumulator + files
+  func computeSourceFiles(source:Path) throws -> [Path] {
+    let expandedGlob = self.sourceFiles.reduce([Path]()) { accumulator, file in
+      return accumulator + source.glob(file)
     }
 
-    sourceFiles = sourceFiles.filter { $0.`extension` != "h" }  // Discard headers
+    let expandedDirectories = try expandedGlob.reduce([Path]()) { accumulator, file in
+      if file.isDirectory {
+        let children = try file.children().filter { $0.`extension` == "swift" }
+        return accumulator + children
+      }
+
+      return accumulator + [file]
+    }
+
+    // Expand directories
+
+
+    let sourceFiles = expandedDirectories.filter { $0.`extension` != "h" }  // Discard headers
 
     for file in sourceFiles {
       if file.`extension` != "swift" {
@@ -151,6 +162,11 @@ extension Specification {
       }
     }
 
+    return sourceFiles
+  }
+
+  public func build(source:Path, destination:Path) throws {
+    let sourceFiles = try computeSourceFiles(source)
     let source = sourceFiles.map { $0.description }.joinWithSeparator(" ")
     let libraries = dependencies.map { "-l\($0.name)" }.joinWithSeparator(" ")
 
