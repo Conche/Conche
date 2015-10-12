@@ -20,6 +20,6 @@ func invoke(command:String, _ arguments:[String]) throws {
 }
 
 func swiftc(arguments: [String]) throws {
-  try invoke("swiftc", arguments)
+  let swiftc = String.fromCString(getenv("SWIFTC")) ?? "swiftc"
+  try invoke(swiftc, arguments)
 }
-
