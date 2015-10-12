@@ -1,7 +1,7 @@
 DESTDIR := /usr/local
 DEPENDENCIES = Commander PathKit
 LIBS = $(foreach lib,$(DEPENDENCIES),.conche/lib/lib$(lib).dylib)
-SWIFTC := swiftc
+SWIFTC := xcrun -sdk macosx swiftc
 SWIFTFLAGS = $(addprefix -l, $(DEPENDENCIES))
 
 SOURCES = Dependency DependencyResolver Downloader Source Specification Invoke build test
