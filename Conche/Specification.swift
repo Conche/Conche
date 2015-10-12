@@ -84,6 +84,8 @@ extension Specification {
 
     if let testSpecification = representation["test_spec"] as? [String:AnyObject] {
       self.testSpecification = try TestSpecification(spec: testSpecification)
+    } else if let testSpecification = representation["test_specification"] as? [String:AnyObject] {
+      self.testSpecification = try TestSpecification(spec: testSpecification)
     } else {
       self.testSpecification = nil
     }
