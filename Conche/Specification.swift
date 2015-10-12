@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import PathKit
 
@@ -151,9 +152,6 @@ extension Specification {
       return accumulator + [file]
     }
 
-    // Expand directories
-
-
     let sourceFiles = expandedDirectories.filter { $0.`extension` != "h" }  // Discard headers
 
     for file in sourceFiles {
@@ -181,9 +179,54 @@ extension Specification {
     }
     let module = moduledir + "\(name).swiftmodule"
 
+    if let lastModified = sourceFiles.lastModified {
+      if library.exists && lastModified < library.lastModified &&
+         module.exists && lastModified < module.lastModified &&
+         dependencies.isEmpty  // We don't yet track updated dependencies
+      {
+        return
+      }
+    }
+
     // TODO, respect specifications module name
     // TODO support spec's frameworks
     try swiftc(["-I", moduledir.description, "-L", libdir.description, libraries, "-module-name", name, "-emit-library", "-emit-module", "-emit-module-path", module.description, source, "-o", library.description])
+  }
+}
+
+extension Path {
+  private var stats: stat {
+    var stats = stat()
+    stat(description, &stats)
+    return stats
+  }
+
+  var lastModified:timespec {
+    return stats.st_mtimespec
+  }
+}
+
+extension CollectionType where Generator.Element == Path {
+  var lastModified:timespec? {
+    return map { $0.lastModified }.sort(>).first
+  }
+}
+
+extension timespec : Comparable {}
+extension timespec : Equatable {}
+public func == (lhs: timespec, rhs: timespec) -> Bool {
+  return lhs.tv_sec == rhs.tv_sec && lhs.tv_nsec == rhs.tv_nsec
+}
+public func < (lhs: timespec, rhs: timespec) -> Bool {
+  if lhs.tv_sec == rhs.tv_sec {
+    return lhs.tv_nsec < rhs.tv_nsec
+  }
+
+  return lhs.tv_sec < rhs.tv_sec
+}
+extension timespec : CustomStringConvertible {
+  public var description:String {
+    return "\(tv_sec)"
   }
 }
 
