@@ -47,10 +47,10 @@ public func test() throws {
       output += try file.read()
     }
     try test.write(output)
-    system("swiftc \(swiftFlags) -o .conche/test \(test)")
+    try swiftc([swiftFlags, "-o", ".conche/test", test.description])
 
     print("Running Tests")
-    system("./.conche/test")
+    try invoke("./.conche/test", [])
   } else {
     throw Error("No test specification found in \(spec.name).")
   }

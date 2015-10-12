@@ -44,11 +44,11 @@ public class GitFilesystemSource : SourceType {
   public func update() throws {
     let destination = path
     if destination.exists {
-      path.chdir {
-        system("git pull \(uri) master")
+      try path.chdir {
+        try invoke("git", ["pull", uri, "master"])
       }
     } else {
-      system("git clone --depth 1 \(uri) \(path)")
+      try invoke("git", ["clone", "--depth", "1", uri, path.description])
     }
   }
 }

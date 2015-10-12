@@ -13,7 +13,7 @@ func downloadDependencies(conchePath:Path, specifications:[Specification]) throw
     for spec in downloadSources {
       print("-> \(spec.name)")
       if let source = spec.source {
-        source.download(dependencyPath(conchePath, spec))
+        try source.download(dependencyPath(conchePath, spec))
       } else {
         print("git / tag source not found.")
         exit(1)
@@ -67,7 +67,7 @@ public func build() throws {
         let libdir = conchePath + "lib"
         let modulesdir = conchePath + "modules"
         print("-> \(name) -> \(destination)")
-        system("swiftc -I \(modulesdir) -L \(libdir) \(libraries) -o \(destination) \(source)")
+        try swiftc(["-I", modulesdir.description, "-L", libdir.description, libraries, "-o", destination.description, source])
       }
     }
   }

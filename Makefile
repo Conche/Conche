@@ -4,7 +4,7 @@ LIBS = $(foreach lib,$(DEPENDENCIES),.conche/lib/lib$(lib).dylib)
 SWIFTC := swiftc
 SWIFTFLAGS = $(addprefix -l, $(DEPENDENCIES))
 
-SOURCES = Dependency DependencyResolver Downloader Source Specification build test
+SOURCES = Dependency DependencyResolver Downloader Source Specification Invoke build test
 SOURCE_FILES = $(foreach file,$(SOURCES),Conche/$(file).swift)
 
 
