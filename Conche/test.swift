@@ -16,9 +16,14 @@ public func test() throws {
     }
 
     let source = GitFilesystemSource(name: "CocoaPods", uri: "https://github.com/CocoaPods/Specs")
-    try source.update()
     let resolver = DependencyResolver(specification: spec, sources: [source])
-    let normalSpecifications = try resolver.resolve()
+    let normalSpecifications:[Specification]
+    do {
+      normalSpecifications = try resolver.resolve()
+    } catch {
+      try source.update()
+      normalSpecifications = try resolver.resolve()
+    }
     let testSpecifications = try resolver.resolveTestDependencies()
     let specifications = normalSpecifications + testSpecifications
 
