@@ -15,5 +15,40 @@ public struct Dependency : CustomStringConvertible {
     let requires = requirements.joinWithSeparator(", ")
     return "\(name) (\(requires))"
   }
+
+  public func satisfies(version: Version) throws -> Bool {
+    return try requirements.map {
+      try satisfies($0, version)
+    }.filter { $0 == false }.first ?? true
+  }
+
+  private func satisfies(requirement: String, _ version: Version) throws -> Bool {
+    let components = requirement.characters.split(2) { $0 == " " }.map(String.init)
+    if components.count == 2 {
+      let `operator` = components[0]
+      let comparisonVersion = try Version(components[1])
+
+      switch `operator` {
+      case "=":
+        return version == comparisonVersion
+      case ">":
+        return version > comparisonVersion
+      case "<":
+        return version < comparisonVersion
+      case ">=":
+        return version >= comparisonVersion
+      case "<=":
+        return version <= comparisonVersion
+      default:
+        return false
+      }
+    }
+
+    if let exactRequirement = try? Version(requirement) {
+      return exactRequirement == version
+    }
+
+    return false
+  }
 }
 
