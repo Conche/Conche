@@ -4,14 +4,15 @@ import Conche
 
 
 describe("Specification") {
-  var specification = Specification(name: "Conche", version: "1.0.0")
+  let version = Version(major: 1, minor: 0, patch: 0)
+  var specification = Specification(name: "Conche", version: version)
 
   $0.it("has a name") {
     try equal(specification.name, "Conche")
   }
 
   $0.it("has a version") {
-    try equal(specification.version, "1.0.0")
+    try equal(specification.version, version)
   }
 
   $0.context("loading from a representation") {
@@ -22,7 +23,7 @@ describe("Specification") {
       ])
 
       try equal(specification.name, "Conche")
-      try equal(specification.version, "1.0.0")
+      try equal(specification.version, version)
     }
 
     $0.it("errors without a name") {

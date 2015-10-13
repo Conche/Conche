@@ -19,7 +19,7 @@ public struct TestSpecification {
 
 public struct Specification {
   public let name:String
-  public let version:String
+  public let version:Version
 
   // TODO Make source a protocol and support others
   public let source:GitSource?
@@ -29,7 +29,7 @@ public struct Specification {
 
   public let testSpecification:TestSpecification?
 
-  public init(name:String, version:String) {
+  public init(name:String, version:Version) {
     self.name = name
     self.version = version
     self.source = nil
@@ -76,7 +76,7 @@ func validate<T>(source:[String:AnyObject], _ key:String) throws -> T {
 extension Specification {
   public init(representation: [String:AnyObject]) throws {
     name = try validate(representation, "name")
-    version = try validate(representation, "version")
+    version = try Version(try validate(representation, "version") as String)
     sourceFiles = try parseSourceFiles(representation["source_files"])
     dependencies = parseDependencies(representation["dependencies"] as? [String:[String]] ?? [:])
     entryPoints = representation["entry_points"] as? [String:[String:String]] ?? [:]
