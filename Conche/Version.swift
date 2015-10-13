@@ -21,11 +21,11 @@ func tryInt(version: String, _ components: [String], _ index:Int, _ `required`: 
 /// Represents a semantic version
 public struct Version : CustomStringConvertible, Equatable, Comparable {
   public let major: Int
-  public let minor: Int
-  public let patch: Int
+  public let minor: Int?
+  public let patch: Int?
   public let prerelease: String?
 
-  public init(major: Int, minor: Int, patch: Int, prerelease: String? = nil) {
+  public init(major: Int, minor: Int? = nil, patch: Int? = nil, prerelease: String? = nil) {
     self.major = major
     self.minor = minor
     self.patch = patch
@@ -48,30 +48,35 @@ public struct Version : CustomStringConvertible, Equatable, Comparable {
 
   public var description:String {
     if let prerelease = prerelease {
-      return "\(major).\(minor).\(patch)-\(prerelease)"
+      return "\(major).\(minor ?? 0).\(patch ?? 0)-\(prerelease)"
     }
 
-    return "\(major).\(minor).\(patch)"
+    return "\(major).\(minor ?? 0).\(patch ?? 0)"
   }
 }
 
 public func == (lhs:Version, rhs:Version) -> Bool {
   return lhs.major == rhs.major &&
-    lhs.minor == rhs.minor &&
-    lhs.patch == rhs.patch &&
+    lhs.minor ?? 0 == rhs.minor ?? 0 &&
+    lhs.patch ?? 0 == rhs.patch ?? 0 &&
     lhs.prerelease == rhs.prerelease
 }
 
-public func < (lhs:Version, rhs:Version) -> Bool {
+public func < (lhs: Version, rhs: Version) -> Bool {
   // TODO prerelease
   if lhs.major == rhs.major {
-    if lhs.minor == rhs.minor {
-      return lhs.patch < rhs.patch
+    if lhs.minor ?? 0 == rhs.minor ?? 0 {
+      return lhs.patch ?? 0 < rhs.patch ?? 0
     }
 
-    return lhs.minor < rhs.minor
+    return lhs.minor ?? 0 < rhs.minor ?? 0
   }
 
   return lhs.major < rhs.major
 }
 
+public func ~> (lhs: Version, rhs: Version) -> Bool {
+  return lhs >= rhs &&
+    !(rhs.minor != nil && rhs.major != lhs.major) &&
+    !(rhs.patch != nil && rhs.minor != lhs.minor)
+}

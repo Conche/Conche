@@ -1,3 +1,7 @@
+enum DependencyError : ErrorType {
+  case InvalidOperator(String)
+}
+
 public struct Dependency : CustomStringConvertible {
   public let name: String
   public let requirements: [String]
@@ -39,16 +43,15 @@ public struct Dependency : CustomStringConvertible {
         return version >= comparisonVersion
       case "<=":
         return version <= comparisonVersion
+      case "~>":
+        return version ~> comparisonVersion
       default:
-        return false
+        throw DependencyError.InvalidOperator(`operator`)
       }
     }
 
-    if let exactRequirement = try? Version(requirement) {
-      return exactRequirement == version
-    }
-
-    return false
+    let exactRequirement = try Version(requirement)
+    return exactRequirement == version
   }
 }
 

@@ -60,6 +60,11 @@ describe("Dependency") {
       try satisfies(["<= 1.2.3"], Version(major: 1, minor: 2, patch: 3))
       try doesntSatisfy(["<= 1.0"], Version(major: 1, minor: 1, patch: 0))
     }
+
+    $0.it("satisfies ~> operator match") {
+      try satisfies(["~> 1.2.3"], Version(major: 1, minor: 2, patch: 3))
+      try doesntSatisfy(["~> 1.2"], Version(major: 1, minor: 1, patch: 0))
+    }
   }
 }
 
