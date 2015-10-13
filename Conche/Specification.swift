@@ -34,7 +34,7 @@ public struct Specification {
 
   public let testSpecification:TestSpecification?
 
-  public init(name:String, version:Version, closure:SpecificationBuilder -> ()) {
+  public init(name:String, version:Version, closure:(SpecificationBuilder -> ())? = nil) {
     self.name = name
     self.version = version
     self.source = nil
@@ -43,7 +43,7 @@ public struct Specification {
     self.testSpecification = nil
 
     let builder = BaseSpecificationBuilder()
-    closure(builder)
+    closure?(builder)
     self.dependencies = builder.dependencies
   }
 }
