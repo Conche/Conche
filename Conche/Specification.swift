@@ -11,9 +11,14 @@ public struct TestSpecification {
   public let sourceFiles:[String]
   public let dependencies:[Dependency]
 
-  public init(spec:[String:AnyObject]) throws {
-    self.sourceFiles = try parseSourceFiles(spec["source_files"])
-    self.dependencies = parseDependencies(spec["dependencies"] as? [String:[String]] ?? [:])
+  public init(sourceFiles: [String], dependencies: [Dependency]) {
+    self.sourceFiles = sourceFiles
+    self.dependencies = dependencies
+  }
+
+  public init(spec: [String:AnyObject]) throws {
+    sourceFiles = try parseSourceFiles(spec["source_files"])
+    dependencies = parseDependencies(spec["dependencies"] as? [String:[String]] ?? [:])
   }
 }
 
@@ -29,14 +34,17 @@ public struct Specification {
 
   public let testSpecification:TestSpecification?
 
-  public init(name:String, version:Version) {
+  public init(name:String, version:Version, closure:SpecificationBuilder -> ()) {
     self.name = name
     self.version = version
     self.source = nil
     self.sourceFiles = []
-    self.dependencies = []
     self.entryPoints = [:]
     self.testSpecification = nil
+
+    let builder = BaseSpecificationBuilder()
+    closure(builder)
+    self.dependencies = builder.dependencies
   }
 }
 
