@@ -2,24 +2,24 @@ import Spectre
 import Conche
 
 func satisfies(requirements: [String], _ version: Version) throws {
-  let dependency = Dependency(name: "", requirements: requirements)
-  try equal(try dependency.satisfies(version), true)
+  let dependency = try Dependency(name: "", requirements: requirements)
+  try equal(dependency.satisfies(version), true)
 }
 
 func doesntSatisfy(requirements: [String], _ version: Version) throws {
-  let dependency = Dependency(name: "", requirements: requirements)
-  try equal(try dependency.satisfies(version), false)
+  let dependency = try Dependency(name: "", requirements: requirements)
+  try equal(dependency.satisfies(version), false)
 }
 
 describe("Dependency") {
-  let dependency = Dependency(name: "Conche", requirements: ["> 1", "< 1.2"])
+  let dependency = try! Dependency(name: "Conche", requirements: ["> 1", "< 1.2"])
 
   $0.it("has a name") {
     try equal(dependency.name, "Conche")
   }
 
   $0.it("has has requirements") {
-    try equal(dependency.requirements.description, "[\"> 1\", \"< 1.2\"]")
+    try equal(dependency.requirements.description, "[> 1, < 1.2]")
   }
 
   $0.it("has a description") {

@@ -18,7 +18,7 @@ public struct TestSpecification {
 
   public init(spec: [String:AnyObject]) throws {
     sourceFiles = try parseSourceFiles(spec["source_files"])
-    dependencies = parseDependencies(spec["dependencies"] as? [String:[String]] ?? [:])
+    dependencies = try parseDependencies(spec["dependencies"] as? [String:[String]] ?? [:])
   }
 }
 
@@ -49,9 +49,9 @@ public struct Specification {
 }
 
 
-func parseDependencies(dependencies:[String:[String]]) -> [Dependency] {
-  return dependencies.map { (name, requirements) in
-    Dependency(name: name, requirements: requirements)
+func parseDependencies(dependencies:[String:[String]]) throws -> [Dependency] {
+  return try dependencies.map { name, requirements in
+    try Dependency(name: name, requirements: requirements)
   }
 }
 
@@ -86,7 +86,7 @@ extension Specification {
     name = try validate(representation, "name")
     version = try Version(try validate(representation, "version") as String)
     sourceFiles = try parseSourceFiles(representation["source_files"])
-    dependencies = parseDependencies(representation["dependencies"] as? [String:[String]] ?? [:])
+    dependencies = try parseDependencies(representation["dependencies"] as? [String:[String]] ?? [:])
     entryPoints = representation["entry_points"] as? [String:[String:String]] ?? [:]
     source = parseSource(representation["source"] as? [String:String])
 

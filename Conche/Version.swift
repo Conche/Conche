@@ -4,7 +4,7 @@ extension String {
   }
 }
 
-func tryInt(version: String, _ components: [String], _ index:Int, _ `required`: Bool = false) throws -> Int {
+func tryInt(version: String, _ components: [String], _ index:Int, _ `required`: Bool = false) throws -> Int? {
   if index < components.count {
     if let value = Int(components[index]) {
       return value
@@ -15,7 +15,7 @@ func tryInt(version: String, _ components: [String], _ index:Int, _ `required`: 
     throw Error("Invalid version \(version), not a valid semantic version.")
   }
 
-  return 0
+  return nil
 }
 
 /// Represents a semantic version
@@ -41,17 +41,26 @@ public struct Version : CustomStringConvertible, Equatable, Comparable {
     }
 
     let components = prereleaseComponents[0].split(".")
-    major = try tryInt(value, components, 0, true)
+    major = try tryInt(value, components, 0, true)!
     minor = try tryInt(value, components, 1)
     patch = try tryInt(value, components, 2)
   }
 
   public var description:String {
-    if let prerelease = prerelease {
-      return "\(major).\(minor ?? 0).\(patch ?? 0)-\(prerelease)"
+    var description = major.description
+    if let minor = minor {
+      if let patch = patch {
+        description += ".\(minor).\(patch)"
+      } else {
+        description += ".\(minor)"
+      }
     }
 
-    return "\(major).\(minor ?? 0).\(patch ?? 0)"
+    if let prerelease = prerelease {
+      description += "-\(prerelease)"
+    }
+
+    return description
   }
 }
 
