@@ -32,7 +32,7 @@ public enum RequirementOperator : String, CustomStringConvertible {
   }
 }
 
-public struct Requirement : CustomStringConvertible {
+public struct Requirement : CustomStringConvertible, Equatable {
   public let version: Version
   public let `operator`: RequirementOperator
 
@@ -60,7 +60,7 @@ public struct Requirement : CustomStringConvertible {
   }
 }
 
-public struct Dependency : CustomStringConvertible {
+public struct Dependency : CustomStringConvertible, Hashable, Equatable {
   public let name: String
   public let requirements: [Requirement]
 
@@ -89,5 +89,16 @@ public struct Dependency : CustomStringConvertible {
     }.filter { $0 == false }.first ?? true
   }
 
+  public var hashValue: Int {
+    return description.hashValue
+  }
+}
+
+public func ==(lhs: Dependency, rhs: Dependency) -> Bool {
+  return lhs.name == rhs.name && lhs.requirements == rhs.requirements
+}
+
+public func ==(lhs: Requirement, rhs: Requirement) -> Bool {
+  return lhs.version == rhs.version && lhs.`operator` == rhs.`operator`
 }
 
