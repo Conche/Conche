@@ -32,6 +32,11 @@ describe("Version") {
     try equal(version.prerelease, "beta.1")
   }
 
+  $0.it("is hashable") {
+    let items = [version: 66]
+    try equal(items[version], 66)
+  }
+
   $0.it("can be converted to a string") {
     try equal(version.description, "1.2.3-beta.1")
   }
