@@ -15,6 +15,10 @@ describe("Specification") {
     try equal(specification.version, version)
   }
 
+  $0.it("has a description") {
+    try equal(specification.description, "Conche (1.0.0)")
+  }
+
   $0.context("loading from a representation") {
     $0.it("loads with a name and version") {
       let specification = try Specification(representation: [
