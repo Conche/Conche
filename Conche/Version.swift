@@ -19,7 +19,7 @@ func tryInt(version: String, _ components: [String], _ index:Int, _ `required`: 
 }
 
 /// Represents a semantic version
-public struct Version : CustomStringConvertible, Equatable, Comparable {
+public struct Version : CustomStringConvertible, Equatable, Comparable, Hashable {
   public let major: Int
   public let minor: Int?
   public let patch: Int?
@@ -61,6 +61,10 @@ public struct Version : CustomStringConvertible, Equatable, Comparable {
     }
 
     return description
+  }
+
+  public var hashValue: Int {
+    return description.hashValue
   }
 }
 

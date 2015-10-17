@@ -46,6 +46,10 @@ public struct Specification {
     closure?(builder)
     self.dependencies = builder.dependencies
   }
+
+  public var description: String {
+	return "\(name) (\(version))"
+  }
 }
 
 
