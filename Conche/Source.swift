@@ -40,7 +40,7 @@ public class GitFilesystemSource : SourceType {
       return path + "\(dependency.name).podspec.json"
     }
 
-    return podspecs.flatMap(loadFile)
+    return podspecs.flatMap(loadFile).filter { dependency.satisfies($0.version) }
   }
 
 
