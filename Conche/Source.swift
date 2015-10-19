@@ -8,10 +8,10 @@ public protocol SourceType {
 }
 
 public class LocalFilesystemSource : SourceType {
-  let path:Path
+  let path: Path
 
-  public init(path:String) {
-    self.path = Path(path)
+  public init(path: Path) {
+    self.path = path
   }
 
   public func search(dependency:Dependency) -> [Specification] {

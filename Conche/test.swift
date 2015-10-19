@@ -16,7 +16,7 @@ public func test() throws {
     }
 
     let cpSource = GitFilesystemSource(name: "CocoaPods", uri: "https://github.com/CocoaPods/Specs")
-    let localSource = LocalFilesystemSource(path:Path.current.description)
+    let localSource = LocalFilesystemSource(path:Path.current)
     let sources:[SourceType] = [localSource, cpSource]
     let dependency = try Dependency(name:spec.name, requirements:[Requirement(spec.version.description)])
     let normalSpecifications:[Specification]
