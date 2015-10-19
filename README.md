@@ -84,8 +84,6 @@ Conche is currently a MVP and is missing many features.
 
 ### Missing Features
 
-- Dependency resolution - Currently versions will not be checked and the latest
-  version of a dependency MAY be used.
 - Support for various components of a podspec, such as frameworks, resources,
   etc.
 - Support for CocoaPods subspecs.
