@@ -25,7 +25,7 @@ func downloadDependencies(conchePath: Path, specifications: [Specification]) thr
 func buildDependencies(conchePath: Path, specifications:[Specification]) throws {
   print("Building Dependencies")
 
-  for spec in specifications {
+  for spec in specifications.reverse() {
     print("-> \(spec.name)")
     try spec.build(dependencyPath(conchePath, spec), destination: conchePath)
   }
@@ -38,14 +38,15 @@ public func build() throws {
     try conchePath.mkdir()
   }
 
-  let source = GitFilesystemSource(name: "CocoaPods", uri: "https://github.com/CocoaPods/Specs")
-  let resolver = DependencyResolver(specification: spec, sources: [source])
+  let cpSource = GitFilesystemSource(name: "CocoaPods", uri: "https://github.com/CocoaPods/Specs")
+  let localSource = LocalFilesystemSource(path:Path.current)
+  let dependency = try Dependency(name:spec.name, requirements:[Requirement(spec.version.description)])
   var specifications:[Specification]
   do {
-    specifications = try resolver.resolve()
+    specifications = try resolve(dependency, sources: [localSource, cpSource])
   } catch {
-    try source.update()
-    specifications = try resolver.resolve()
+    try cpSource.update()
+    specifications = try resolve(dependency, sources: [localSource, cpSource])
   }
 
   if !spec.dependencies.isEmpty {

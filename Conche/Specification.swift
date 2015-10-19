@@ -22,7 +22,7 @@ public struct TestSpecification {
   }
 }
 
-public struct Specification {
+public struct Specification : CustomStringConvertible {
   public let name:String
   public let version:Version
 
@@ -48,7 +48,7 @@ public struct Specification {
   }
 
   public var description: String {
-	return "\(name) (\(version))"
+    return "\(name) (\(version))"
   }
 }
 

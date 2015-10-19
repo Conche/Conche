@@ -7,6 +7,22 @@ public protocol SourceType {
   func update() throws
 }
 
+public class LocalFilesystemSource : SourceType {
+  let path: Path
+
+  public init(path: Path) {
+    self.path = path
+  }
+
+  public func search(dependency:Dependency) -> [Specification] {
+    let filename = "\(dependency.name).podspec.json"
+    let paths = try? path.children().filter { $0.description.hasSuffix(filename) } ?? []
+    let specs = paths!.flatMap { (file:Path) in try? Specification(path:file) }
+    return specs.filter { dependency.satisfies($0.version) }
+  }
+
+  public func update() throws {}
+}
 
 public class GitFilesystemSource : SourceType {
   let name:String
@@ -24,7 +40,7 @@ public class GitFilesystemSource : SourceType {
       return path + "\(dependency.name).podspec.json"
     }
 
-    return podspecs.flatMap(loadFile)
+    return podspecs.flatMap(loadFile).filter { dependency.satisfies($0.version) }
   }
 
 

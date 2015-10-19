@@ -15,16 +15,18 @@ public func test() throws {
       try conchePath.mkdir()
     }
 
-    let source = GitFilesystemSource(name: "CocoaPods", uri: "https://github.com/CocoaPods/Specs")
-    let resolver = DependencyResolver(specification: spec, sources: [source])
+    let cpSource = GitFilesystemSource(name: "CocoaPods", uri: "https://github.com/CocoaPods/Specs")
+    let localSource = LocalFilesystemSource(path:Path.current)
+    let sources:[SourceType] = [localSource, cpSource]
+    let dependency = try Dependency(name:spec.name, requirements:[Requirement(spec.version.description)])
     let normalSpecifications:[Specification]
     do {
-      normalSpecifications = try resolver.resolve()
+      normalSpecifications = try resolve(dependency, sources: sources)
     } catch {
-      try source.update()
-      normalSpecifications = try resolver.resolve()
+      try cpSource.update()
+      normalSpecifications = try resolve(dependency, sources: sources)
     }
-    let testSpecifications = try resolver.resolveTestDependencies()
+    let testSpecifications = try resolveTestDependencies(spec.testSpecification, sources: sources)
     let specifications = normalSpecifications + testSpecifications
 
     try downloadDependencies(conchePath, specifications: specifications)
