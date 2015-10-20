@@ -1,9 +1,9 @@
 {
   "name": "Conche",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "summary": "A native Swift build system and dependency manager",
   "homepage": "https://github.com/kylef/Conche",
-  "source": { "git": "https://github.com/kylef/Conche", "tag": "0.1.0" },
+  "source": { "git": "https://github.com/kylef/Conche", "tag": "0.2.0" },
   "authors": { "Kyle Fuller": "kyle@fuller.li" },
   "license": {
     "type": "BSD",
