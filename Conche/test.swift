@@ -19,13 +19,14 @@ public func test() throws {
     let localSource = LocalFilesystemSource(path:Path.current)
     let sources:[SourceType] = [localSource, cpSource]
     let dependency = try Dependency(name:spec.name, requirements:[Requirement(spec.version.description)])
-    let normalSpecifications:[Specification]
+    var normalSpecifications:[Specification]
     do {
       normalSpecifications = try resolve(dependency, sources: sources)
     } catch {
       try cpSource.update()
       normalSpecifications = try resolve(dependency, sources: sources)
     }
+    normalSpecifications.removeFirst()
     let testSpecifications = try resolveTestDependencies(spec.testSpecification, sources: sources)
     let specifications = normalSpecifications + testSpecifications
 

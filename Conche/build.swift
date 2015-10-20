@@ -49,6 +49,8 @@ public func build() throws {
     specifications = try resolve(dependency, sources: [localSource, cpSource])
   }
 
+  specifications.removeFirst()
+
   if !spec.dependencies.isEmpty {
     try downloadDependencies(conchePath, specifications: specifications)
     try buildDependencies(conchePath, specifications: specifications)
