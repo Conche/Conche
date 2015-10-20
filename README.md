@@ -60,15 +60,8 @@ $ conche test
 ### Homebrew
 
 ```shell
-$ git clone --recursive https://github.com/kylef/Conche
-$ cd Conche
-$ make DESTDIR=/usr/local/Cellar/Conche/HEAD install
-$ brew link conche
+$ brew install --HEAD kylef/formulae/conche
 ```
-
-##### Why don't you have a formula?
-
-Conche is still alpha and this will be made when we're ready.
 
 ### Other
 
