@@ -36,5 +36,4 @@ Group {
     try paths.filter { $0.exists }.forEach { try $0.delete() }
     print("Cleaned")
   }
-}.run("0.2.0")
-
+}.run("0.3.0")
