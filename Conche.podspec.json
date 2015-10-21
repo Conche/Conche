@@ -24,7 +24,7 @@
     ]
   },
   "test_spec": {
-    "source_files": "ConcheTests/*.swift",
+    "source_files": "ConcheSpecs/*.swift",
     "dependencies": {
       "Spectre": [ "~> 0.2.0" ]
     }
