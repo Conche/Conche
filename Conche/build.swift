@@ -22,16 +22,12 @@ func downloadDependencies(conchePath: Path, specifications: [Specification]) thr
   }
 }
 
-func buildDependencies(conchePath: Path, specifications:[Specification]) throws {
-  print("Building Dependencies")
-
-  for spec in specifications.reverse() {
-    print("-> \(spec.name)")
-    try spec.build(dependencyPath(conchePath, spec), destination: conchePath)
-  }
+func buildSpecificationTask(conchePath: Path)(_ spec: Specification) -> Task {
+  let source = dependencyPath(conchePath, spec)
+  return SpecificationBuildTask(specification: spec, source: source, destination: conchePath)
 }
 
-public func build() throws {
+func buildTasks() throws -> [Task] {
   let spec = try findPodspec()
   let conchePath = Path(".conche")
   if !conchePath.exists {
@@ -51,33 +47,39 @@ public func build() throws {
 
   specifications.removeFirst()
 
-  if !spec.dependencies.isEmpty {
-    try downloadDependencies(conchePath, specifications: specifications)
-    try buildDependencies(conchePath, specifications: specifications)
+  var tasks = specifications.reverse().map(buildSpecificationTask(conchePath))
+  let task = AnonymousTask("Building \(spec.name)") {
+    try spec.build(Path.current, destination: conchePath)
   }
-
-  print("Building \(spec.name)")
-  try spec.build(Path.current, destination: conchePath)
+  tasks.append(task)
 
   if let cliEntryPoints = spec.entryPoints["cli"] {
     if !cliEntryPoints.isEmpty {
-      print("Building Entry Points")
+      let task = AnonymousTask("Building Entry Points") {
+        let bindir = conchePath + "bin"
+        if !bindir.exists {
+          try bindir.mkdir()
+        }
 
-      let bindir = conchePath + "bin"
-      if !bindir.exists {
-        try bindir.mkdir()
+        let libraries = (specifications + [spec]).map { "-l\($0.name)" }.joinWithSeparator(" ")
+
+        for (name, source) in cliEntryPoints {
+          let destination = bindir + name
+          let libdir = conchePath + "lib"
+          let modulesdir = conchePath + "modules"
+          print("-> \(name) -> \(destination)")
+          try swiftc(["-I", modulesdir.description, "-L", libdir.description, libraries, "-o", destination.description, source])
+        }
       }
 
-      let libraries = (specifications + [spec]).map { "-l\($0.name)" }.joinWithSeparator(" ")
-
-      for (name, source) in cliEntryPoints {
-        let destination = bindir + name
-        let libdir = conchePath + "lib"
-        let modulesdir = conchePath + "modules"
-        print("-> \(name) -> \(destination)")
-        try swiftc(["-I", modulesdir.description, "-L", libdir.description, libraries, "-o", destination.description, source])
-      }
+      tasks.append(task)
     }
   }
+
+  return tasks
 }
 
+public func build() throws {
+  let tasks = try buildTasks()
+  try tasks.forEach(runTask)
+}

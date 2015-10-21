@@ -9,7 +9,7 @@
     "type": "BSD",
     "file": "LICENSE"
   },
-  "source_files": ["Conche/*.swift"],
+  "source_files": ["Conche/*.swift", "Conche/Tasks/*.swift"],
   "entry_points": {
     "cli": {
       "conche": "bin/conche.swift"

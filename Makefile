@@ -4,7 +4,7 @@ LIBS = $(foreach lib,$(DEPENDENCIES),.conche/lib/lib$(lib).dylib)
 SWIFTC := xcrun -sdk macosx swiftc
 SWIFTFLAGS = $(addprefix -l, $(DEPENDENCIES))
 
-SOURCES = Dependency DependencyResolver Downloader Source Specification SpecificationBuilder Invoke Version build test
+SOURCES = Dependency DependencyResolver Downloader Source Specification SpecificationBuilder Task Tasks/SpecificationTask Invoke Version build test
 SOURCE_FILES = $(foreach file,$(SOURCES),Conche/$(file).swift)
 
 
@@ -15,7 +15,7 @@ bin/conche: .conche/lib/libConche.dylib bin/conche.swift
 	@$(SWIFTC) -I .conche/modules -L .conche/lib $(SWIFTFLAGS) -lConche -o bin/conche bin/conche.swift
 
 clean:
-	rm -fr .conche/modules .conche/lib
+	rm -fr bin/conche .conche/modules .conche/lib
 
 .conche/lib/libConche.dylib: $(LIBS) $(SOURCE_FILES)
 	@echo "Building Conche"
@@ -27,7 +27,7 @@ clean:
 	@echo "Building $*"
 	@$(SWIFTC) -module-name $* -emit-library -emit-module -emit-module-path .conche/modules/$*.swiftmodule .conche/packages/$*/$*/*.swift -o .conche/lib/lib$*.dylib
 
-test: bin/conche
+test: bin/conche .conche/lib/libSpectre.dylib
 	@./bin/conche test
 
 install: bin/conche
