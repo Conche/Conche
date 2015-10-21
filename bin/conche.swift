@@ -18,5 +18,23 @@ Group {
     let conchePath = Path(".conche").absolute() + "bin"
     system("PATH=\(conchePath) \(exec)")
   }
+
+  $0.command("clean",
+    descriptor: Flag("full")
+  ) { (full:Bool) in
+    var paths = [Path]()
+    let conchePath = Path(".conche")
+
+    if full {
+      paths.append(conchePath)
+    } else {
+      paths.append(conchePath + "bin")
+      paths.append(conchePath + "lib")
+      paths.append(conchePath + "modules")
+    }
+
+    try paths.filter { $0.exists }.forEach { try $0.delete() }
+    print("Cleaned")
+  }
 }.run("0.2.0")
 
