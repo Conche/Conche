@@ -18,5 +18,5 @@ Group {
     let conchePath = Path(".conche").absolute() + "bin"
     system("PATH=\(conchePath) \(exec)")
   }
-}.run()
+}.run("0.2.0")
 
