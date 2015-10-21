@@ -47,14 +47,14 @@ class SpecificationBuildTask : Task {
     }
 
     let outputFiles = [
-      destination + "lib" + "lib\(name).dylib",
-      destination + "modules" + "\(name).swiftmodule",
+      destination + "lib" + "lib\(specification.name).dylib",
+      destination + "modules" + "\(specification.name).swiftmodule",
     ]
 
     if let lastModified = try? specification.computeSourceFiles(source).lastModified,
            outputModified = outputFiles.lastModified {
       let outputExists = outputFiles.map { $0.exists }.filter { $0 == false }.first ?? true
-      return lastModified > outputModified && outputExists
+      return !outputExists || lastModified > outputModified
     }
 
     return true
