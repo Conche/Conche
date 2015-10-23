@@ -16,6 +16,7 @@ public protocol TestSpecificationBuilder : DependencySpecificationBuilder {
 class BaseSpecificationBuilder : DependencySpecificationBuilder, SpecificationBuilder, TestSpecificationBuilder {
   var dependencies = [Dependency]()
   var testSpecification:TestSpecification? = nil
+  var libraries = [String]()
 
   func dependency(dependency:Dependency) {
     dependencies.append(dependency)

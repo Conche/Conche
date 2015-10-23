@@ -32,6 +32,8 @@ public struct Specification : CustomStringConvertible {
   public let dependencies:[Dependency]
   public let entryPoints:[String:[String:String]]
 
+  public let libraries: [String]
+
   public let testSpecification:TestSpecification?
 
   public init(name:String, version:Version, closure:(SpecificationBuilder -> ())? = nil) {
@@ -45,6 +47,7 @@ public struct Specification : CustomStringConvertible {
     let builder = BaseSpecificationBuilder()
     closure?(builder)
     self.dependencies = builder.dependencies
+    self.libraries = builder.libraries
   }
 
   public var description: String {
@@ -73,13 +76,17 @@ enum SpecificationError : ErrorType {
   case Unsupported(String)
 }
 
-func validate<T>(source:[String:AnyObject], _ key:String) throws -> T {
+func validate<T>(source:[String:AnyObject], _ key:String, `default`: T? = nil) throws -> T {
   if let value = source[key] {
     if let value = value as? T {
       return value
     }
 
     throw SpecificationError.IncorrectType(key: key)
+  }
+
+  if let `default` = `default` {
+    return `default`
   }
 
   throw SpecificationError.MissingField(key)
@@ -93,6 +100,7 @@ extension Specification {
     dependencies = try parseDependencies(representation["dependencies"] as? [String:[String]] ?? [:])
     entryPoints = representation["entry_points"] as? [String:[String:String]] ?? [:]
     source = parseSource(representation["source"] as? [String:String])
+    libraries = try validate(representation, "libraries", `default`: [])
 
     if let testSpecification = representation["test_spec"] as? [String:AnyObject] {
       self.testSpecification = try TestSpecification(spec: testSpecification)
@@ -180,7 +188,8 @@ extension Specification {
   public func build(source:Path, destination:Path) throws {
     let sourceFiles = try computeSourceFiles(source)
     let source = sourceFiles.map { $0.description }.joinWithSeparator(" ")
-    let libraries = dependencies.map { "-l\($0.name)" }.joinWithSeparator(" ")
+    let libraries = self.libraries + dependencies.map { $0.name }
+    let flags = libraries.map { "-l\($0)" }.joinWithSeparator(" ")
 
     let libdir = destination + "lib"
     if !libdir.exists {
@@ -204,7 +213,7 @@ extension Specification {
 
     // TODO, respect specifications module name
     // TODO support spec's frameworks
-    try swiftc(["-I", moduledir.description, "-L", libdir.description, libraries, "-module-name", name, "-emit-library", "-emit-module", "-emit-module-path", module.description, source, "-o", library.description])
+    try swiftc(["-I", moduledir.description, "-L", libdir.description, flags, "-module-name", name, "-emit-library", "-emit-module", "-emit-module-path", module.description, source, "-o", library.description])
   }
 }
 
