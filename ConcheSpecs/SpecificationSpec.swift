@@ -8,15 +8,15 @@ describe("Specification") {
   var specification = Specification(name: "Conche", version: version)
 
   $0.it("has a name") {
-    try equal(specification.name, "Conche")
+    try expect(specification.name) == "Conche"
   }
 
   $0.it("has a version") {
-    try equal(specification.version, version)
+    try expect(specification.version) == version
   }
 
   $0.it("has a description") {
-    try equal(specification.description, "Conche (1.0.0)")
+    try expect(specification.description) == "Conche (1.0.0)"
   }
 
   $0.context("loading from a representation") {
@@ -26,28 +26,21 @@ describe("Specification") {
         "version": "1.0.0",
       ])
 
-      try equal(specification.name, "Conche")
-      try equal(specification.version, version)
+      try expect(specification.name) == "Conche"
+      try expect(specification.version) == version
     }
 
     $0.it("errors without a name") {
-      do {
-        let _ = try Specification(representation: [:])
-        try fail("Unexpected Success")
-      } catch {
-      }
+      try expect(try Specification(representation: [:])).toThrow()
     }
 
     $0.it("errors when name and version are incorrect type") {
-      do {
-        let _ = try Specification(representation: [
+      try expect(
+        try Specification(representation: [
           "name": 0,
           "version": 1.0,
         ])
-        try fail("Unexpected Success")
-      } catch {
-      }
+      ).toThrow()
     }
   }
 }
-

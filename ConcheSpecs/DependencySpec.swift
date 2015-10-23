@@ -3,47 +3,47 @@ import Conche
 
 func satisfies(requirements: [String], _ version: Version) throws {
   let dependency = try Dependency(name: "", requirements: requirements)
-  try equal(dependency.satisfies(version), true)
+  try expect(dependency.satisfies(version)).to.beTrue()
 }
 
 func doesntSatisfy(requirements: [String], _ version: Version) throws {
   let dependency = try Dependency(name: "", requirements: requirements)
-  try equal(dependency.satisfies(version), false)
+  try expect(dependency.satisfies(version)).to.beFalse()
 }
 
 describe("Dependency") {
   let dependency = try! Dependency(name: "Conche", requirements: ["> 1", "< 1.2"])
 
   $0.it("has a name") {
-    try equal(dependency.name, "Conche")
+    try expect(dependency.name) == "Conche"
   }
 
   $0.it("has has requirements") {
-    try equal(dependency.requirements.description, "[> 1, < 1.2]")
+    try expect(dependency.requirements.description) == "[> 1, < 1.2]"
   }
 
   $0.it("has a description") {
-    try equal(dependency.description, "Conche (> 1, < 1.2)")
+    try expect(dependency.description) == "Conche (> 1, < 1.2)"
   }
 
   $0.it("is hashable") {
     let items = [dependency: 3]
-    try equal(items[dependency], 3)
+    try expect(items[dependency]) == 3
   }
 
   $0.it("equals a dependency with the same name and requirements") {
     let dep = try Dependency(name: "Conche", requirements: ["> 1", "< 1.2"])
-    try equal(dependency, dep)
+    try expect(dependency) == dep
   }
 
   $0.it("does not equal a dependency with the same requirements and different name") {
     let dep = try Dependency(name: "SPECTRE", requirements: ["> 1", "< 1.2"])
-    try notEqual(dependency, dep)
+    try expect(dependency) != dep
   }
 
   $0.it("does not equal a dependency with the same name and different requirements") {
     let dep = try Dependency(name: "Conche", requirements: ["< 1.2"])
-    try notEqual(dependency, dep)
+    try expect(dependency) != dep
   }
 
   $0.context("when satisfying a version") {
@@ -87,4 +87,3 @@ describe("Dependency") {
     }
   }
 }
-

@@ -6,7 +6,7 @@ extension CollectionType where Generator.Element == Specification {
     let items = filter { $0.name == name && $0.version.description == version }
     if items.isEmpty {
       let descriptions = items.map { $0.description }
-      try fail("Collection did not contain \(name)-\(version): \(descriptions)")
+      throw failure("Collection did not contain \(name)-\(version): \(descriptions)")
     }
   }
 }
@@ -38,18 +38,16 @@ class InMemorySource : SourceType {
 }
 
 describe("resolve()") {
-
-
   $0.context("A specification has no dependencies") {
-    let source = InMemorySource(specifications:[
+    let source = InMemorySource(specifications: [
       spec("Cookie", "1.0.0"),
       spec("Cookie", "1.1.0"),
     ])
 
     $0.it("resolves the single specification") {
-      let specs = try resolve(depends("Cookie",["1.0.0"]), sources:[source])
+      let specs = try resolve(depends("Cookie", ["1.0.0"]), sources: [source])
       try specs.hasSpecification("Cookie", "1.0.0")
-      try equal(1, specs.count)
+      try expect(specs.count) == 1
     }
   }
 
@@ -65,14 +63,13 @@ describe("resolve()") {
         spec("Gasoline", "1.11.0")
       ])
 
-
       $0.it("resolves the set of specifications") {
         let specs = try resolve(depends("Car",["1.1.0"]), sources:[source])
         try specs.hasSpecification("Car", "1.1.0")
         try specs.hasSpecification("Engine", "1.1.0")
         try specs.hasSpecification("Wheel", "3.0.15")
         try specs.hasSpecification("Gasoline", "1.11.0")
-        try equal(4, specs.count)
+        try expect(specs.count) == 4
       }
     }
 
@@ -87,14 +84,13 @@ describe("resolve()") {
         spec("Gasoline", "1.11.0")
       ])
 
-
       $0.it("resolves the set of specifications") {
         let specs = try resolve(depends("Car",["1.1.0"]), sources:[source])
         try specs.hasSpecification("Car", "1.1.0")
         try specs.hasSpecification("Engine", "1.1.0")
         try specs.hasSpecification("Wheel", "3.0.15")
         try specs.hasSpecification("Gasoline", "1.0.2")
-        try equal(4, specs.count)
+        try expect(specs.count) == 4
       }
     }
   }
@@ -110,28 +106,26 @@ describe("resolve()") {
     ])
 
     $0.context("and not explicitly requested") {
-
       $0.it("ignores prereleases") {
         let specs = try resolve(depends("ChocolateChip",["0.1.1"]), sources:[source])
         try specs.hasSpecification("ChocolateChip", "0.1.1")
         try specs.hasSpecification("Cocoa", "1.0.5")
-        try equal(2, specs.count)
+        try expect(specs.count) == 2
       }
     }
 
     $0.context("and explicitly requested") {
-
       $0.it("satisfies using prereleases") {
         let specs = try resolve(depends("ChocolateChip",["0.2.0"]), sources:[source])
         try specs.hasSpecification("ChocolateChip", "0.2.0")
         try specs.hasSpecification("Cocoa", "2.0.0-beta")
-        try equal(2, specs.count)
+        try expect(specs.count) == 2
       }
     }
   }
 
   $0.context("The dependencies require two versions of the same dependency") {
-    let source = InMemorySource(specifications:[
+    let source = InMemorySource(specifications: [
       spec("Cookie", "1.0.0"),
       spec("Cookie", "1.1.0"),
       spec("Milk", "2.0.0",
@@ -143,13 +137,13 @@ describe("resolve()") {
     ])
 
     $0.it("throws a 'conflict' error") {
-      do {
-        let specs = try resolve(depends("ChocolateMilk",["1.0.0"]), sources:[source])
-        try fail("did not throw error")
-      } catch DependencyResolverError.Conflict {
-      } catch {
-        try fail("threw wrong kind of error: \(error)")
-      }
+      try expect(
+        try resolve(depends("ChocolateMilk", ["1.0.0"]), sources: [source])
+      ).toThrow(DependencyResolverError.Conflict("Cookie", requiredBy: [
+        depends("Cookie", ["1.0.0"]),
+        depends("Milk"),
+        depends("Cookie", ["> 1.0.0"])
+      ]))
     }
   }
 
@@ -162,52 +156,42 @@ describe("resolve()") {
     ])
 
     $0.it("throws a 'circular reference' error") {
-      do {
-        let resolution = try resolve(depends("Cookie",["1.0.0"]), sources:[source])
-        try fail("did not throw error: \(resolution)")
-      } catch DependencyResolverError.CircularDependency {
-      } catch {
-        try fail("threw wrong kind of error: \(error)")
-      }
+      try expect(
+        try resolve(depends("Cookie", ["1.0.0"]), sources: [source])
+      ).toThrow(DependencyResolverError.CircularDependency("Cookie", requiredBy: source.specifications))
     }
   }
 
   $0.context("Dependecies with the same name and version are in multiple sources") {
-    let source1 = InMemorySource(specifications:[spec("Cookie","1.0.0")])
-    let source2 = InMemorySource(specifications:[spec("Cookie","1.0.0")])
+    let source1 = InMemorySource(specifications: [spec("Cookie","1.0.0")])
+    let source2 = InMemorySource(specifications: [spec("Cookie","1.0.0")])
 
     $0.it("resolves to a single specification") {
       let specs = try resolve(depends("Cookie",["1.0.0"]), sources:[source1, source2])
       try specs.hasSpecification("Cookie", "1.0.0")
-      try equal(specs.count, 1)
+      try expect(specs.count) == 1
     }
   }
 
   $0.context("The dependencies require a version not available in sources") {
-    let source = InMemorySource(specifications:[spec("Cookie","1.0.0")])
+    let source = InMemorySource(specifications: [spec("Cookie","1.0.0")])
 
     $0.it("throws a 'no such dependency' error") {
-      do {
-        try resolve(depends("Cookie",["> 1.0.0"]), sources:[source])
-        try fail("did not throw error")
-      } catch DependencyResolverError.NoSuchDependency {
-      } catch {
-        try fail("threw wrong kind of error")
-      }
+      let dependency = depends("Cookie", ["> 1.0.0"])
+      try expect(
+        try resolve(dependency, sources: [source])
+      ).toThrow(DependencyResolverError.NoSuchDependency(dependency))
     }
   }
 
   $0.context("The dependencies require a dependency not available in sources") {
-    let source = InMemorySource(specifications:[spec("Cookie","1.0.0")])
+    let source = InMemorySource(specifications: [spec("Cookie","1.0.0")])
 
     $0.it("throws a 'no such dependency' error") {
-      do {
-        try resolve(depends("Biscuit",["1.0.0"]), sources:[source])
-        try fail("did not throw error")
-      } catch DependencyResolverError.NoSuchDependency {
-      } catch {
-        try fail("threw wrong kind of error")
-      }
+      let dependency = depends("Biscuit", ["1.0.0"])
+      try expect(
+        try resolve(dependency, sources: [source])
+      ).toThrow(DependencyResolverError.NoSuchDependency(dependency))
     }
   }
 }
