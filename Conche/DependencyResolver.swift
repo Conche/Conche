@@ -1,32 +1,32 @@
-public enum DependencyResolverError : ErrorType, Equatable, CustomStringConvertible {
-  case NoSuchDependency(Dependency)
-  case CircularDependency(String, requiredBy: [Specification])
-  case Conflict(String, requiredBy: [Dependency])
+public struct DependencyGraph : CustomStringConvertible {
+  let root: Specification
+  let dependencies: [DependencyGraph]
+
+  public init(root: Specification, dependencies: [DependencyGraph]) {
+    self.root = root
+    self.dependencies = dependencies
+  }
+
+  /// Flatten the dependency graph into the root specifications
+  public func flatten() -> [Specification] {
+    let dependentSpecs = dependencies.map { $0.flatten() }
+    return ([root] + dependentSpecs.reduce([], combine: +)).uniq()
+  }
 
   public var description: String {
-    switch self {
-    case .NoSuchDependency(let dependency):
-      return "Dependency '\(dependency)' not found."
-    case .Conflict(let dependencyName, let requirements):
-      return "Dependency '\(dependencyName)' requires conflicting versions from requirements: \(requirements)."
-    case .CircularDependency(let dependencyName, let requirements):
-      return "Dependency '\(dependencyName)' resolved to a cycle using requirements: \(requirements)"
-    }
+    return "\(root): \(dependencies)"
   }
-}
 
-/// Returns if to dependency resolver errors are identical
-/// note: Circular dependencies do not correctly check the inner specifications
-public func == (lhs: DependencyResolverError, rhs: DependencyResolverError) -> Bool {
-  switch (lhs, rhs) {
-  case let (.NoSuchDependency(lhsDependency), .NoSuchDependency(rhsDependency)):
-    return lhsDependency == rhsDependency
-  case let (.Conflict(lhsName, lhsRequirements), .Conflict(rhsName, rhsRequirements)):
-    return lhsName == rhsName && lhsRequirements == rhsRequirements
-  case let (.CircularDependency(lhsName, lhsSpecifications), .CircularDependency(rhsName, rhsSpecifications)):
-    return lhsName == rhsName && lhsSpecifications.count == rhsSpecifications.count
-  default:
-    return false
+  /// Check for a reference to the root specification in the dependencies
+  func hasCircularReference() -> Bool {
+    return detectDuplicate([root.name])
+  }
+
+  func detectDuplicate(specificationNames: [String]) -> Bool {
+    return dependencies.filter {
+      return specificationNames.contains($0.root.name) ||
+             $0.detectDuplicate(specificationNames + [$0.root.name])
+    }.count > 0
   }
 }
 
@@ -38,24 +38,25 @@ func resolveTestDependencies(testSpecification: TestSpecification?, sources: [So
 /// Resolves a dependency with the given sources and returns
 /// the collection of resolved specifications
 public func resolve(dependency: Dependency, sources: [SourceType]) throws -> [Specification] {
-  return try resolve(dependency, sources: sources, dependencies: [])
+  return try resolve(dependency, sources: sources, dependencies: []).flatten()
 }
 
 /// Resolve a dependency with the given sources, iteratively
 /// adding all known dependencies from previous resolutions
 /// in the dependency tree, returning the collection of resolved
 /// specifications
-private func resolve(dependency: Dependency, sources: [SourceType], dependencies: [Dependency]) throws -> [Specification] {
+public func resolve(dependency: Dependency, sources: [SourceType], dependencies: [Dependency]) throws -> DependencyGraph {
   var specifications = search(dependency.combine(dependencies.filter { $0.name == dependency.name }), sources: sources)
   while let specification = specifications.popFirst() {
     do {
-      let resolution = try [specification] + specification.dependencies.map {
+      let resolution = try specification.dependencies.map {
         try resolve($0, sources: sources, dependencies: dependencies + specification.dependencies)
-      }.reduce([], combine: +).uniq()
-      if let duplicate = resolution.detectDuplicate() {
-        throw DependencyResolverError.CircularDependency(duplicate.name, requiredBy: resolution)
+      }.uniq()
+      let graph = DependencyGraph(root: specification, dependencies: resolution)
+      if graph.hasCircularReference() {
+        throw DependencyResolverError.CircularDependency(graph.root.name, requiredBy: graph.flatten())
       }
-      return resolution
+      return graph
     } catch let error as DependencyResolverError {
       if specifications.isEmpty {
         throw error
@@ -86,6 +87,29 @@ private func searchForConflict(dependency: Dependency, sources: [SourceType], de
   return DependencyResolverError.NoSuchDependency(dependency)
 }
 
+extension CollectionType where Generator.Element == DependencyGraph {
+  func uniq() -> [Generator.Element] {
+    var seen: [String: Bool] = [:]
+    return filter {
+      let key = "\($0.root.name) \($0.root.version)"
+      return seen.updateValue(true, forKey: key) == nil
+    }
+  }
+
+  /// Iterates over the specifications returning the first
+  /// duplicated specification by name
+  func detectDuplicate() -> Generator.Element? {
+    var seen: [String] = []
+    for element in self {
+      if seen.contains(element.root.name) {
+        return element
+      }
+      seen.append(element.root.name)
+    }
+    return nil
+  }
+}
+
 extension CollectionType where Generator.Element == Specification {
   /// Filters specifications removing pre-release versions
   func removePreReleases() -> [Generator.Element] {
@@ -95,19 +119,6 @@ extension CollectionType where Generator.Element == Specification {
   func uniq() -> [Generator.Element] {
     var seen: [String: Bool] = [:]
     return filter { seen.updateValue(true, forKey: $0.description) == nil }
-  }
-
-  /// Iterates over the specifications returning the first
-  /// duplicated specification by name
-  func detectDuplicate() -> Generator.Element? {
-    var seen: [String] = []
-    for element in self {
-      if seen.contains(element.name) {
-        return element
-      }
-      seen.append(element.name)
-    }
-    return nil
   }
 
   /// Sorts specifications by name and version
