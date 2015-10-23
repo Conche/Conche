@@ -1,4 +1,4 @@
-import Darwin
+import Darwin.libc
 
 
 struct InvocationError : ErrorType {
@@ -12,6 +12,7 @@ func invoke(command:String, _ arguments:[String]) throws {
   // TODO - Properly invoke subprocess with exec, arguments are not escaped
   let args = arguments.joinWithSeparator(" ")
 
+  fflush(stdout)
   let code = system("\(command) \(args)")
 
   if code != 0 {
