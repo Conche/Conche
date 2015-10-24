@@ -30,7 +30,7 @@ public func test(files: [String]) throws {
         testFiles = files.map { Path($0) }
       }
 
-      let specNames = testSpecifications.map { $0.name } + [spec.name]
+      let specNames = spec.dependencies.map { $0.name } + testSpecifications.map { $0.name } + [spec.name]
       let flags = specNames.map { "-l\($0)" }.joinWithSeparator(" ")
       let swiftFlags = "-I .conche/modules -L .conche/lib \(flags)"
       let testFile: Path
