@@ -1,5 +1,13 @@
+import Foundation
 import Spectre
+import PathKit
 import Conche
+
+extension Path {
+  func readJSON() throws -> AnyObject {
+    return try NSJSONSerialization.JSONObjectWithData(try read(), options: NSJSONReadingOptions(rawValue: 0))
+  }
+}
 
 extension CollectionType where Generator.Element == Specification {
   func hasSpecification(name:String, _ version:String) throws {
@@ -192,6 +200,18 @@ describe("resolve()") {
       try expect(
         try resolve(dependency, sources: [source])
       ).toThrow(DependencyResolverError.NoSuchDependency(dependency))
+    }
+  }
+
+  $0.context("dependency resoltion") {
+    let fixturePath = Path(__FILE__) + ".." + ".." + "ConcheTests" + "resolver_integration_specs"
+    let fixtureCase = fixturePath + "case"
+    let fixtures = try! fixtureCase.glob("*.json").map { try $0.readJSON() as! [String:AnyObject] }
+
+    for fixture in fixtures {
+      $0.it(fixture["name"] as! String) {
+        let requested = fixture["requested"] as! [String:String]
+      }
     }
   }
 }
