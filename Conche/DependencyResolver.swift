@@ -1,5 +1,5 @@
 public struct DependencyGraph : CustomStringConvertible {
-  let root: Specification
+  public let root: Specification
   let dependencies: [DependencyGraph]
 
   public init(root: Specification, dependencies: [DependencyGraph]) {
@@ -30,22 +30,6 @@ public struct DependencyGraph : CustomStringConvertible {
   }
 }
 
-infix operator ~= { associativity left precedence 130 }
-/// Compute functional equivalence within an acceptable degree of error
-public func ~= (lhs: DependencyGraph, rhs: DependencyGraph) -> Bool {
-  if lhs.root.name == rhs.root.name &&
-     lhs.root.version == rhs.root.version &&
-     lhs.dependencies.count == rhs.dependencies.count {
-    for (index, graph) in lhs.dependencies.enumerate() {
-      if !(graph ~= rhs.dependencies[index]) {
-        return false
-      }
-    }
-    return true
-  }
-  return false
-}
-
 func resolveTestDependencies(testSpecification: TestSpecification?, sources: [SourceType]) throws -> [Specification] {
   let testDependencies = try testSpecification?.dependencies.map { try resolve($0, sources: sources) } ?? []
   return testDependencies.reduce([], combine: +)
@@ -65,12 +49,19 @@ public func resolve(dependency: Dependency, sources: [SourceType], dependencies:
   var specifications = search(dependency.combine(dependencies.filter { $0.name == dependency.name }), sources: sources)
   while let specification = specifications.popFirst() {
     do {
-      let resolution = try specification.dependencies.map {
-        try resolve($0, sources: sources, dependencies: dependencies + specification.dependencies)
+      let duplicates = dependencies.filter { $0 == dependency }
+      if duplicates.count > 1 {
+        throw DependencyResolverError.CircularDependency(specification.name, requiredBy: dependencies)
+      }
+      let resolution: [DependencyGraph] = try specification.dependencies.map {
+        let specDeps = dependencies + specification.dependencies
+        return try resolve($0, sources: sources, dependencies: specDeps)
       }.sort().uniq()
       let graph = DependencyGraph(root: specification, dependencies: resolution)
       if graph.hasCircularReference() {
-        throw DependencyResolverError.CircularDependency(graph)
+        let specs = graph.flatten()
+        let cycle = try specs.map { try Dependency(specification: $0) }
+        throw DependencyResolverError.CircularDependency(specification.name, requiredBy: cycle)
       }
       return graph
     } catch let error as DependencyResolverError {
@@ -116,19 +107,6 @@ extension CollectionType where Generator.Element == DependencyGraph {
   func sort() -> [Generator.Element] {
     return sort { $0.root.name < $1.root.name }
   }
-
-  /// Iterates over the specifications returning the first
-  /// duplicated specification by name
-  func detectDuplicate() -> Generator.Element? {
-    var seen: [String] = []
-    for element in self {
-      if seen.contains(element.root.name) {
-        return element
-      }
-      seen.append(element.root.name)
-    }
-    return nil
-  }
 }
 
 extension CollectionType where Generator.Element == Specification {
@@ -172,5 +150,21 @@ extension Dependency {
   func incompatible(specification: Specification) -> Bool {
     return !satisfies(specification.version) || (!usePreRelease() && specification.version.prerelease != nil)
   }
+}
+
+infix operator ~= { associativity left precedence 130 }
+/// Compute functional equivalence within an acceptable degree of error
+public func ~= (lhs: DependencyGraph, rhs: DependencyGraph) -> Bool {
+  if lhs.root.name == rhs.root.name &&
+     lhs.root.version == rhs.root.version &&
+     lhs.dependencies.count == rhs.dependencies.count {
+    for (index, graph) in lhs.dependencies.enumerate() {
+      if !(graph ~= rhs.dependencies[index]) {
+        return false
+      }
+    }
+    return true
+  }
+  return false
 }
 

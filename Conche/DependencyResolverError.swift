@@ -1,12 +1,12 @@
 public enum DependencyResolverError : ErrorType, Equatable, CustomStringConvertible {
-  case CircularDependency(DependencyGraph)
+  case CircularDependency(String, requiredBy: [Dependency])
   case Conflict(String, requiredBy: [Dependency])
   case NoSuchDependency(Dependency)
 
   public var description: String {
     switch self {
-    case .CircularDependency(let graph):
-      return "Dependency '\(graph.root.name)' resolved to a cycle using requirements: \(graph.flatten())"
+    case .CircularDependency(let dependencyName, let requirements):
+      return "Dependency '\(dependencyName)' could not be resolved due to circular references between: \(requirements)."
     case .Conflict(let dependencyName, let requirements):
       return "Dependency '\(dependencyName)' requires conflicting versions from requirements: \(requirements)."
     case .NoSuchDependency(let dependency):
@@ -23,8 +23,8 @@ public func == (lhs: DependencyResolverError, rhs: DependencyResolverError) -> B
     return lhsDependency == rhsDependency
   case let (.Conflict(lhsName, lhsRequirements), .Conflict(rhsName, rhsRequirements)):
     return lhsName == rhsName && lhsRequirements == rhsRequirements
-  case let (.CircularDependency(lhsGraph), .CircularDependency(rhsGraph)):
-    return lhsGraph ~= rhsGraph
+  case let (.CircularDependency(lhsName, lhsRequirements), .CircularDependency(rhsName, rhsRequirements)):
+    return lhsName == rhsName && lhsRequirements == rhsRequirements
   default:
     return false
   }

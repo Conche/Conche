@@ -1,5 +1,13 @@
+import Foundation
 import Spectre
+import PathKit
 import Conche
+
+extension Path {
+  func readJSON() throws -> AnyObject {
+    return try NSJSONSerialization.JSONObjectWithData(try read(), options: NSJSONReadingOptions(rawValue: 0))
+  }
+}
 
 extension CollectionType where Generator.Element == Specification {
   func hasSpecification(name:String, _ version:String) throws {
@@ -30,6 +38,31 @@ func spec(name:String, _ version:String, _ dependencies:[Dependency]? = nil) -> 
 
 func depends(name:String, _ requirements:[String]? = nil) -> Dependency {
   return try! Dependency(name:name, requirements:requirements)
+}
+
+func indexSource(filePath: Path) throws -> InMemorySource {
+  let json = try filePath.readJSON() as! [String: AnyObject]
+  var specs: [Specification] = []
+  for (_, items) in json {
+    for item in items as! [[String: AnyObject]] {
+      specs.append(spec(item))
+    }
+  }
+  return InMemorySource(specifications: specs)
+}
+
+func spec(json: [String: AnyObject]) -> Specification {
+  let jsonDeps = json["dependencies"] as? [String: String] ?? [:]
+  let dependencies = jsonDeps.map {
+    return depends($0, $1.characters.split{ $0 == "," }.map(String.init))
+  }
+  return spec(json["name"] as! String, json["version"] as! String, dependencies)
+}
+
+func depGraph(json: [String: AnyObject]) -> DependencyGraph {
+  let root = spec(json["name"] as! String, json["version"] as! String)
+  let jsonDeps = json["dependencies"] as? [[String: AnyObject]] ?? []
+  return DependencyGraph(root: root, dependencies: jsonDeps.map { depGraph($0) }.sort { $0.root.name < $1.root.name })
 }
 
 class InMemorySource : SourceType {
@@ -176,9 +209,10 @@ describe("resolve()") {
           ])
         ])
       ])
-      try expect(
-        try resolve(depends("Cookie", ["1.0.0"]), sources: [source])
-      ).toThrow(DependencyResolverError.CircularDependency(graph))
+      let deps = [depends("Cookie", ["1.0.0"]), depends("ChocolateChip", ["1.1.0"]),
+        depends("Milk", ["2.1.5"]), depends("Cookie", ["1.1.0"])]
+      let error = DependencyResolverError.CircularDependency("Cookie", requiredBy: deps)
+      try expect(try resolve(depends("Cookie", ["1.0.0"]), sources: [source])).toThrow(error)
     }
   }
 
@@ -212,6 +246,51 @@ describe("resolve()") {
       try expect(
         try resolve(dependency, sources: [source])
       ).toThrow(DependencyResolverError.NoSuchDependency(dependency))
+    }
+  }
+
+  $0.context("General dependency resolution") {
+    let skips = ["conflict", "conflict_on_child", "root_conflict_on_child",
+      "simple_with_base", "three_way_conflict", "deep_complex_confict"]
+    let fixturePath = Path(__FILE__) + ".." + ".." + "ConcheSpecs" + "fixtures" + "resolver_integration_specs"
+    let fixtureCase = fixturePath + "case"
+    let fixtureSource = fixturePath + "index"
+    let fixturePaths = fixtureCase.glob("*.json").filter {
+      !skips.contains($0.lastComponentWithoutExtension)
+    }
+
+    if fixturePaths.isEmpty {
+      fatalError("Dependency resolver fixtures not found")
+    }
+
+    for fixturePath in fixturePaths {
+      let fixture = try! fixturePath.readJSON() as! [String: AnyObject]
+      let sourceFileName = (fixture["index"] as? String ?? "awesome") + ".json"
+      let source = try! indexSource(fixtureSource + sourceFileName)
+      let requests = fixture["requested"] as! [String: String]
+      let graphs = fixture["resolved"] as! [[String: AnyObject]]
+      let name = requests.keys.first!
+      let version = requests[name]!
+      let dependency = depends(name, version.isEmpty ? nil : [version])
+
+      $0.it(fixture["name"] as! String) {
+        if graphs.count > 0 {
+          let graph = try resolve(dependency, sources:[source], dependencies: [])
+          try expect(graph) ~= depGraph(graphs[0])
+        } else {
+          switch fixturePath.lastComponent {
+          case "circular.json":
+            let error = DependencyResolverError.CircularDependency("foo", requiredBy: [
+              depends("bar", [">= 0"]), depends("foo", [">= 0"]), depends("foo", [">= 0"])])
+            try expect(try resolve(dependency, sources: [source])).toThrow(error)
+          case "unresolvable_child.json":
+            let error = DependencyResolverError.NoSuchDependency(depends("json", ["<= 1.7.7",">= 1.4.4"]))
+            try expect(try resolve(dependency, sources: [source])).toThrow(error)
+          default:
+            throw failure("Unhandled test case")
+          }
+        }
+      }
     }
   }
 }
