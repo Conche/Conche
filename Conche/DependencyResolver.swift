@@ -114,7 +114,7 @@ extension CollectionType where Generator.Element == DependencyGraph {
 
   /// Sorts graphs by name and version, lowest first
   func sort() -> [Generator.Element] {
-    return sort { $0.root.name < $1.root.name && $0.root.version < $1.root.version }
+    return sort { $0.root.name < $1.root.name }
   }
 
   /// Iterates over the specifications returning the first
