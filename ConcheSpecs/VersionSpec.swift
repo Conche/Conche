@@ -1,15 +1,13 @@
 import Spectre
 import Conche
 
-func truth(@autoclosure closure: () -> Bool) throws {
-  if !closure() {
-    throw failure("is not true")
-  }
-}
-
-func falsy(@autoclosure closure: () -> Bool) throws {
-  if closure() {
-    throw failure("is not false")
+public func ~> <E: ExpectationType where E.ValueType == Version>(lhs: E, rhs: E.ValueType) throws {
+  if let value = try lhs.expression() {
+    guard value ~> rhs else {
+      throw lhs.failure("\(value) is not ~> \(rhs)")
+    }
+  } else {
+    throw lhs.failure("nil is not ~> \(rhs)")
   }
 }
 
@@ -81,39 +79,39 @@ describe("Version") {
     $0.context("with the more than operator") {
       $0.it("returns whether a version is more than another version") {
         let requirement = v(3, 1, 2)
-        try truth(v(3, 1, 3) > requirement)
-        try truth(v(3, 2, 2) > requirement)
-        try truth(v(4, 1, 3) > requirement)
-        try falsy(v(3, 1, 2) > requirement)
-        try falsy(v(2, 1, 2) > requirement)
+        try expect(v(3, 1, 3)) > requirement
+        try expect(v(3, 2, 2)) > requirement
+        try expect(v(4, 1, 3)) > requirement
+        try expect(v(3, 1, 2) > requirement).to.beFalse()
+        try expect(v(2, 1, 2) > requirement).to.beFalse()
       }
     }
 
     $0.context("with the optimistic operator") {
       $0.it("returns whether a version satisfies using a major version") {
         let requirement = v(3)
-        try truth(v(3, 3, 0) ~> requirement)
-        try truth(v(4, 0, 0) ~> requirement)
+        try expect(v(3, 3, 0)) ~> requirement
+        try expect(v(4, 0, 0)) ~> requirement
       }
 
       $0.it("returns whether a version satisfies using a minor version") {
         let requirement = v(3, 2)
-        try truth(v(3, 2) ~> requirement)
-        try truth(v(3, 2, 0) ~> requirement)
-        try truth(v(3, 2, 1) ~> requirement)
-        try truth(v(3, 3) ~> requirement)
-        try truth(v(3, 3, 0) ~> requirement)
-        try falsy(v(4, 0, 0) ~> requirement)
+        try expect(v(3, 2)) ~> requirement
+        try expect(v(3, 2, 0)) ~> requirement
+        try expect(v(3, 2, 1)) ~> requirement
+        try expect(v(3, 3)) ~> requirement
+        try expect(v(3, 3, 0)) ~> requirement
+        try expect(v(4, 0, 0) ~> requirement).to.beFalse()
       }
 
       $0.it("returns whether a version satisfies using a patch version") {
         let requirement = v(3, 2, 0)
-        try truth(v(3, 2) ~> requirement)
-        try truth(v(3, 2, 0) ~> requirement)
-        try truth(v(3, 2, 1) ~> requirement)
-        try falsy(v(3, 3) ~> requirement)
-        try falsy(v(3, 3, 0) ~> requirement)
-        try falsy(v(4, 0, 0) ~> requirement)
+        try expect(v(3, 2)) ~> requirement
+        try expect(v(3, 2, 0)) ~> requirement
+        try expect(v(3, 2, 1)) ~> requirement
+        try expect(v(3, 3) ~> requirement).to.beFalse()
+        try expect(v(3, 3, 0) ~> requirement).to.beFalse()
+        try expect(v(4, 0, 0) ~> requirement).to.beFalse()
       }
     }
   }
