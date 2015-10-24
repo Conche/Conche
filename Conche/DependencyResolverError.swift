@@ -1,16 +1,16 @@
 public enum DependencyResolverError : ErrorType, Equatable, CustomStringConvertible {
-  case NoSuchDependency(Dependency)
   case CircularDependency(DependencyGraph)
   case Conflict(String, requiredBy: [Dependency])
+  case NoSuchDependency(Dependency)
 
   public var description: String {
     switch self {
-    case .NoSuchDependency(let dependency):
-      return "Dependency '\(dependency)' not found."
-    case .Conflict(let dependencyName, let requirements):
-      return "Dependency '\(dependencyName)' requires conflicting versions from requirements: \(requirements)."
     case .CircularDependency(let graph):
       return "Dependency '\(graph.root.name)' resolved to a cycle using requirements: \(graph.flatten())"
+    case .Conflict(let dependencyName, let requirements):
+      return "Dependency '\(dependencyName)' requires conflicting versions from requirements: \(requirements)."
+    case .NoSuchDependency(let dependency):
+      return "Dependency '\(dependency)' not found."
     }
   }
 }
