@@ -9,6 +9,7 @@ public enum RequirementOperator : String, CustomStringConvertible {
   case LessThanEqual = "<="
   case MoreThan = ">"
   case MoreThanEqual = ">="
+  case NotEqual = "!="
 
   public var description: String {
     return rawValue
@@ -28,6 +29,8 @@ public enum RequirementOperator : String, CustomStringConvertible {
       return lhs > rhs
     case .MoreThanEqual:
       return lhs >= rhs
+    case .NotEqual:
+      return lhs != rhs
     }
   }
 }
