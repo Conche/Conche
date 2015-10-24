@@ -30,6 +30,22 @@ public struct DependencyGraph : CustomStringConvertible {
   }
 }
 
+infix operator ~= { associativity left precedence 130 }
+/// Compute functional equivalence within an acceptable degree of error
+public func ~= (lhs: DependencyGraph, rhs: DependencyGraph) -> Bool {
+  if lhs.root.name == rhs.root.name &&
+     lhs.root.version == rhs.root.version &&
+     lhs.dependencies.count == rhs.dependencies.count {
+    for (index, graph) in lhs.dependencies.enumerate() {
+      if !(graph ~= rhs.dependencies[index]) {
+        return false
+      }
+    }
+    return true
+  }
+  return false
+}
+
 func resolveTestDependencies(testSpecification: TestSpecification?, sources: [SourceType]) throws -> [Specification] {
   let testDependencies = try testSpecification?.dependencies.map { try resolve($0, sources: sources) } ?? []
   return testDependencies.reduce([], combine: +)
@@ -54,7 +70,7 @@ public func resolve(dependency: Dependency, sources: [SourceType], dependencies:
       }.uniq()
       let graph = DependencyGraph(root: specification, dependencies: resolution)
       if graph.hasCircularReference() {
-        throw DependencyResolverError.CircularDependency(graph.root.name, requiredBy: graph.flatten())
+        throw DependencyResolverError.CircularDependency(graph)
       }
       return graph
     } catch let error as DependencyResolverError {

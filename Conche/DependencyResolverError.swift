@@ -1,6 +1,6 @@
 public enum DependencyResolverError : ErrorType, Equatable, CustomStringConvertible {
   case NoSuchDependency(Dependency)
-  case CircularDependency(String, requiredBy: [Specification])
+  case CircularDependency(DependencyGraph)
   case Conflict(String, requiredBy: [Dependency])
 
   public var description: String {
@@ -9,8 +9,8 @@ public enum DependencyResolverError : ErrorType, Equatable, CustomStringConverti
       return "Dependency '\(dependency)' not found."
     case .Conflict(let dependencyName, let requirements):
       return "Dependency '\(dependencyName)' requires conflicting versions from requirements: \(requirements)."
-    case .CircularDependency(let dependencyName, let requirements):
-      return "Dependency '\(dependencyName)' resolved to a cycle using requirements: \(requirements)"
+    case .CircularDependency(let graph):
+      return "Dependency '\(graph.root.name)' resolved to a cycle using requirements: \(graph.flatten())"
     }
   }
 }
@@ -23,8 +23,8 @@ public func == (lhs: DependencyResolverError, rhs: DependencyResolverError) -> B
     return lhsDependency == rhsDependency
   case let (.Conflict(lhsName, lhsRequirements), .Conflict(rhsName, rhsRequirements)):
     return lhsName == rhsName && lhsRequirements == rhsRequirements
-  case let (.CircularDependency(lhsName, lhsSpecifications), .CircularDependency(rhsName, rhsSpecifications)):
-    return lhsName == rhsName && lhsSpecifications.count == rhsSpecifications.count
+  case let (.CircularDependency(lhsGraph), .CircularDependency(rhsGraph)):
+    return lhsGraph ~= rhsGraph
   default:
     return false
   }

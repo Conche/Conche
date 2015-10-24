@@ -156,9 +156,16 @@ describe("resolve()") {
     ])
 
     $0.it("throws a 'circular reference' error") {
+      let graph = DependencyGraph(root: source.specifications[0], dependencies: [
+        DependencyGraph(root: source.specifications[2], dependencies: [
+          DependencyGraph(root: source.specifications[3], dependencies: [
+            DependencyGraph(root: source.specifications[1], dependencies: [])
+          ])
+        ])
+      ])
       try expect(
         try resolve(depends("Cookie", ["1.0.0"]), sources: [source])
-      ).toThrow(DependencyResolverError.CircularDependency("Cookie", requiredBy: source.specifications))
+      ).toThrow(DependencyResolverError.CircularDependency(graph))
     }
   }
 
