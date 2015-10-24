@@ -9,8 +9,8 @@ Group {
     try build()
   }
 
-  $0.command("test") {
-    try test()
+  $0.command("test", VaradicArgument<String>("files")) { files in
+    try test(files)
   }
 
   $0.command("exec") { (command:String, parser:ArgumentParser) in
@@ -19,9 +19,7 @@ Group {
     system("PATH=\(conchePath) \(exec)")
   }
 
-  $0.command("clean",
-    descriptor: Flag("full")
-  ) { (full:Bool) in
+  $0.command("clean", Flag("full")) { (full:Bool) in
     var paths = [Path]()
     let conchePath = Path(".conche")
 

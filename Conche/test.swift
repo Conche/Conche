@@ -2,7 +2,7 @@ import Darwin
 import PathKit
 
 
-public func test() throws {
+public func test(files: [String]) throws {
   let conchePath = Path(".conche")
   let spec = try findPodspec()
 
@@ -19,24 +19,35 @@ public func test() throws {
     tasks += testSpecifications.reverse().map(buildSpecificationTask(conchePath))
 
     let buildTestTask = AnonymousTask("Building Specs") {
-      let testFiles = testSpecification.sourceFiles.reduce([Path]()) { (accumulator, file) in
-        let files = Path.current.glob(file)
-        return accumulator + files
+      let testFiles: [Path]
+
+      if files.isEmpty {
+        testFiles = testSpecification.sourceFiles.reduce([Path]()) { (accumulator, file) in
+          let specificationFiles = Path.current.glob(file)
+          return accumulator + specificationFiles
+        }
+      } else {
+        testFiles = files.map { Path($0) }
       }
 
-      // Build it all into one file
-      // TODO, this is the worst, improve significantly
       let specNames = testSpecifications.map { $0.name } + [spec.name]
       let flags = specNames.map { "-l\($0)" }.joinWithSeparator(" ")
-
       let swiftFlags = "-I .conche/modules -L .conche/lib \(flags)"
-      let test = Path(".conche/test.swift")
-      var output = ""
-      for file in testFiles {
-        output += try file.read()
+      let testFile: Path
+
+      if files.count == 1 {
+        testFile = testFiles[0]
+      } else {
+        // Build it all into one file TODO, this is the worst, improve significantly
+        testFile = Path(".conche/test.swift")
+        var output = ""
+        for file in testFiles {
+          output += try file.read()
+        }
+        try testFile.write(output)
       }
-      try test.write(output)
-      try swiftc([swiftFlags, "-o", ".conche/test", test.description])
+
+      try swiftc([swiftFlags, "-o", ".conche/test", testFile.description])
     }
 
     let runTestTask = AnonymousTask("Running Specs") {
