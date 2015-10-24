@@ -11,6 +11,17 @@ extension CollectionType where Generator.Element == Specification {
   }
 }
 
+infix operator ~= { associativity left precedence 130 }
+func ~= <E: ExpectationType where E.ValueType == DependencyGraph>(lhs: E, rhs: E.ValueType) throws {
+  if let value = try lhs.expression() {
+    guard value ~= rhs else {
+      throw lhs.failure("\(value) is not equivalent to \(rhs)")
+    }
+  } else {
+    throw lhs.failure("given value is nil")
+  }
+}
+
 func spec(name:String, _ version:String, _ dependencies:[Dependency]? = nil) -> Specification {
   return Specification(name:name, version:try! Version(version)) {
     dependencies?.forEach($0.dependency)
@@ -45,9 +56,8 @@ describe("resolve()") {
     ])
 
     $0.it("resolves the single specification") {
-      let specs = try resolve(depends("Cookie", ["1.0.0"]), sources: [source])
-      try specs.hasSpecification("Cookie", "1.0.0")
-      try expect(specs.count) == 1
+      let graph = try resolve(depends("Cookie", ["1.0.0"]), sources: [source], dependencies: [])
+      try expect(graph) ~= DependencyGraph(root: source.specifications[0], dependencies: [])
     }
   }
 
@@ -64,12 +74,13 @@ describe("resolve()") {
       ])
 
       $0.it("resolves the set of specifications") {
-        let specs = try resolve(depends("Car",["1.1.0"]), sources:[source])
-        try specs.hasSpecification("Car", "1.1.0")
-        try specs.hasSpecification("Engine", "1.1.0")
-        try specs.hasSpecification("Wheel", "3.0.15")
-        try specs.hasSpecification("Gasoline", "1.11.0")
-        try expect(specs.count) == 4
+        let graph = try resolve(depends("Car",["1.1.0"]), sources:[source], dependencies: [])
+        try expect(graph) ~= DependencyGraph(root: spec("Car", "1.1.0"), dependencies: [
+          DependencyGraph(root: spec("Engine", "1.1.0"), dependencies: [
+            DependencyGraph(root: spec("Gasoline", "1.11.0"), dependencies: [])
+          ]),
+          DependencyGraph(root: spec("Wheel", "3.0.15"), dependencies: [])
+        ])
       }
     }
 
@@ -85,12 +96,14 @@ describe("resolve()") {
       ])
 
       $0.it("resolves the set of specifications") {
-        let specs = try resolve(depends("Car",["1.1.0"]), sources:[source])
-        try specs.hasSpecification("Car", "1.1.0")
-        try specs.hasSpecification("Engine", "1.1.0")
-        try specs.hasSpecification("Wheel", "3.0.15")
-        try specs.hasSpecification("Gasoline", "1.0.2")
-        try expect(specs.count) == 4
+        let graph = try resolve(depends("Car",["1.1.0"]), sources:[source], dependencies: [])
+        try expect(graph) ~= DependencyGraph(root: spec("Car", "1.1.0"), dependencies: [
+          DependencyGraph(root: spec("Engine", "1.1.0"), dependencies: [
+            DependencyGraph(root: spec("Gasoline", "1.0.2"), dependencies: [])
+          ]),
+          DependencyGraph(root: spec("Gasoline", "1.0.2"), dependencies: []),
+          DependencyGraph(root: spec("Wheel", "3.0.15"), dependencies: [])
+        ])
       }
     }
   }
@@ -107,19 +120,19 @@ describe("resolve()") {
 
     $0.context("and not explicitly requested") {
       $0.it("ignores prereleases") {
-        let specs = try resolve(depends("ChocolateChip",["0.1.1"]), sources:[source])
-        try specs.hasSpecification("ChocolateChip", "0.1.1")
-        try specs.hasSpecification("Cocoa", "1.0.5")
-        try expect(specs.count) == 2
+        let graph = try resolve(depends("ChocolateChip",["0.1.1"]), sources:[source], dependencies: [])
+        try expect(graph) ~= DependencyGraph(root: spec("ChocolateChip", "0.1.1"), dependencies: [
+          DependencyGraph(root: spec("Cocoa", "1.0.5"), dependencies: [])
+        ])
       }
     }
 
     $0.context("and explicitly requested") {
       $0.it("satisfies using prereleases") {
-        let specs = try resolve(depends("ChocolateChip",["0.2.0"]), sources:[source])
-        try specs.hasSpecification("ChocolateChip", "0.2.0")
-        try specs.hasSpecification("Cocoa", "2.0.0-beta")
-        try expect(specs.count) == 2
+        let graph = try resolve(depends("ChocolateChip",["0.2.0"]), sources:[source], dependencies: [])
+        try expect(graph) ~= DependencyGraph(root: spec("ChocolateChip", "0.2.0"), dependencies: [
+          DependencyGraph(root: spec("Cocoa", "2.0.0-beta"), dependencies: [])
+        ])
       }
     }
   }
@@ -156,10 +169,10 @@ describe("resolve()") {
     ])
 
     $0.it("throws a 'circular reference' error") {
-      let graph = DependencyGraph(root: source.specifications[0], dependencies: [
-        DependencyGraph(root: source.specifications[2], dependencies: [
-          DependencyGraph(root: source.specifications[3], dependencies: [
-            DependencyGraph(root: source.specifications[1], dependencies: [])
+      let graph = DependencyGraph(root: spec("Cookie", "1.0.0"), dependencies: [
+        DependencyGraph(root: spec("ChocolateChip", "1.1.0"), dependencies: [
+          DependencyGraph(root: spec("Milk", "2.1.5"), dependencies: [
+            DependencyGraph(root: spec("Cookie", "1.1.0"), dependencies: [])
           ])
         ])
       ])

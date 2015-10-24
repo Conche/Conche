@@ -67,7 +67,7 @@ public func resolve(dependency: Dependency, sources: [SourceType], dependencies:
     do {
       let resolution = try specification.dependencies.map {
         try resolve($0, sources: sources, dependencies: dependencies + specification.dependencies)
-      }.uniq()
+      }.sort().uniq()
       let graph = DependencyGraph(root: specification, dependencies: resolution)
       if graph.hasCircularReference() {
         throw DependencyResolverError.CircularDependency(graph)
@@ -112,6 +112,11 @@ extension CollectionType where Generator.Element == DependencyGraph {
     }
   }
 
+  /// Sorts graphs by name and version, lowest first
+  func sort() -> [Generator.Element] {
+    return sort { $0.root.name < $1.root.name && $0.root.version < $1.root.version }
+  }
+
   /// Iterates over the specifications returning the first
   /// duplicated specification by name
   func detectDuplicate() -> Generator.Element? {
@@ -137,7 +142,7 @@ extension CollectionType where Generator.Element == Specification {
     return filter { seen.updateValue(true, forKey: $0.description) == nil }
   }
 
-  /// Sorts specifications by name and version
+  /// Sorts specifications by name and version, highest first
   func sort() -> [Generator.Element] {
     return sort { $0.name >= $1.name && $0.version >= $1.version }
   }
