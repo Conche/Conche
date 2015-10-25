@@ -36,5 +36,9 @@ install: bin/conche
 	mkdir -p "$(DESTDIR)/bin/"
 	mkdir -p "$(DESTDIR)/lib/"
 	cp -f "bin/conche" "$(DESTDIR)/bin/"
-	cp -fr ".conche/lib/" "$(DESTDIR)/lib/"
-
+	cp -fr ".conche/lib/" "$(DESTDIR)/lib/conche"
+	install_name_tool -change ".conche/lib/libCommander.dylib" "@executable_path/../lib/conche/libCommander.dylib" "$(DESTDIR)/bin/conche"
+	install_name_tool -change ".conche/lib/libPathKit.dylib" "@executable_path/../lib/conche/libPathKit.dylib" "$(DESTDIR)/bin/conche"
+	install_name_tool -change ".conche/lib/libConche.dylib" "@executable_path/../lib/conche/libConche.dylib" "$(DESTDIR)/bin/conche"
+	install_name_tool -change ".conche/lib/libCommander.dylib" "@executable_path/../lib/conche/libCommander.dylib" "$(DESTDIR)/lib/conche/libConche.dylib"
+	install_name_tool -change ".conche/lib/libPathKit.dylib" "@executable_path/../lib/conche/libPathKit.dylib" "$(DESTDIR)/lib/conche/libConche.dylib"
