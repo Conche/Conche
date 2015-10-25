@@ -7,3 +7,6 @@
 [submodule ".conche/packages/Spectre"]
 	path = .conche/packages/Spectre
 	url = https://github.com/kylef/Spectre
+[submodule "ConcheSpecs/fixtures/resolver_integration_specs"]
+	path = ConcheSpecs/fixtures/resolver_integration_specs
+	url = https://github.com/CocoaPods/Resolver-Integration-Specs

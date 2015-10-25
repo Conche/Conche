@@ -1,5 +1,13 @@
+import Foundation
 import Spectre
+import PathKit
 import Conche
+
+extension Path {
+  func readJSON() throws -> AnyObject {
+    return try NSJSONSerialization.JSONObjectWithData(try read(), options: NSJSONReadingOptions(rawValue: 0))
+  }
+}
 
 extension CollectionType where Generator.Element == Specification {
   func hasSpecification(name:String, _ version:String) throws {
@@ -11,6 +19,17 @@ extension CollectionType where Generator.Element == Specification {
   }
 }
 
+infix operator ~= { associativity left precedence 130 }
+func ~= <E: ExpectationType where E.ValueType == DependencyGraph>(lhs: E, rhs: E.ValueType) throws {
+  if let value = try lhs.expression() {
+    guard value ~= rhs else {
+      throw lhs.failure("\(value) is not equivalent to \(rhs)")
+    }
+  } else {
+    throw lhs.failure("given value is nil")
+  }
+}
+
 func spec(name:String, _ version:String, _ dependencies:[Dependency]? = nil) -> Specification {
   return Specification(name:name, version:try! Version(version)) {
     dependencies?.forEach($0.dependency)
@@ -19,6 +38,31 @@ func spec(name:String, _ version:String, _ dependencies:[Dependency]? = nil) -> 
 
 func depends(name:String, _ requirements:[String]? = nil) -> Dependency {
   return try! Dependency(name:name, requirements:requirements)
+}
+
+func indexSource(filePath: Path) throws -> InMemorySource {
+  let json = try filePath.readJSON() as! [String: AnyObject]
+  var specs: [Specification] = []
+  for (_, items) in json {
+    for item in items as! [[String: AnyObject]] {
+      specs.append(spec(item))
+    }
+  }
+  return InMemorySource(specifications: specs)
+}
+
+func spec(json: [String: AnyObject]) -> Specification {
+  let jsonDeps = json["dependencies"] as? [String: String] ?? [:]
+  let dependencies = jsonDeps.map {
+    return depends($0, $1.characters.split{ $0 == "," }.map(String.init))
+  }
+  return spec(json["name"] as! String, json["version"] as! String, dependencies)
+}
+
+func depGraph(json: [String: AnyObject]) -> DependencyGraph {
+  let root = spec(json["name"] as! String, json["version"] as! String)
+  let jsonDeps = json["dependencies"] as? [[String: AnyObject]] ?? []
+  return DependencyGraph(root: root, dependencies: jsonDeps.map { depGraph($0) }.sort { $0.root.name < $1.root.name })
 }
 
 class InMemorySource : SourceType {
@@ -45,9 +89,8 @@ describe("resolve()") {
     ])
 
     $0.it("resolves the single specification") {
-      let specs = try resolve(depends("Cookie", ["1.0.0"]), sources: [source])
-      try specs.hasSpecification("Cookie", "1.0.0")
-      try expect(specs.count) == 1
+      let graph = try resolve(depends("Cookie", ["1.0.0"]), sources: [source], dependencies: [])
+      try expect(graph) ~= DependencyGraph(root: source.specifications[0], dependencies: [])
     }
   }
 
@@ -64,12 +107,13 @@ describe("resolve()") {
       ])
 
       $0.it("resolves the set of specifications") {
-        let specs = try resolve(depends("Car",["1.1.0"]), sources:[source])
-        try specs.hasSpecification("Car", "1.1.0")
-        try specs.hasSpecification("Engine", "1.1.0")
-        try specs.hasSpecification("Wheel", "3.0.15")
-        try specs.hasSpecification("Gasoline", "1.11.0")
-        try expect(specs.count) == 4
+        let graph = try resolve(depends("Car",["1.1.0"]), sources:[source], dependencies: [])
+        try expect(graph) ~= DependencyGraph(root: spec("Car", "1.1.0"), dependencies: [
+          DependencyGraph(root: spec("Engine", "1.1.0"), dependencies: [
+            DependencyGraph(root: spec("Gasoline", "1.11.0"), dependencies: [])
+          ]),
+          DependencyGraph(root: spec("Wheel", "3.0.15"), dependencies: [])
+        ])
       }
     }
 
@@ -85,12 +129,14 @@ describe("resolve()") {
       ])
 
       $0.it("resolves the set of specifications") {
-        let specs = try resolve(depends("Car",["1.1.0"]), sources:[source])
-        try specs.hasSpecification("Car", "1.1.0")
-        try specs.hasSpecification("Engine", "1.1.0")
-        try specs.hasSpecification("Wheel", "3.0.15")
-        try specs.hasSpecification("Gasoline", "1.0.2")
-        try expect(specs.count) == 4
+        let graph = try resolve(depends("Car",["1.1.0"]), sources:[source], dependencies: [])
+        try expect(graph) ~= DependencyGraph(root: spec("Car", "1.1.0"), dependencies: [
+          DependencyGraph(root: spec("Engine", "1.1.0"), dependencies: [
+            DependencyGraph(root: spec("Gasoline", "1.0.2"), dependencies: [])
+          ]),
+          DependencyGraph(root: spec("Gasoline", "1.0.2"), dependencies: []),
+          DependencyGraph(root: spec("Wheel", "3.0.15"), dependencies: [])
+        ])
       }
     }
   }
@@ -107,19 +153,19 @@ describe("resolve()") {
 
     $0.context("and not explicitly requested") {
       $0.it("ignores prereleases") {
-        let specs = try resolve(depends("ChocolateChip",["0.1.1"]), sources:[source])
-        try specs.hasSpecification("ChocolateChip", "0.1.1")
-        try specs.hasSpecification("Cocoa", "1.0.5")
-        try expect(specs.count) == 2
+        let graph = try resolve(depends("ChocolateChip",["0.1.1"]), sources:[source], dependencies: [])
+        try expect(graph) ~= DependencyGraph(root: spec("ChocolateChip", "0.1.1"), dependencies: [
+          DependencyGraph(root: spec("Cocoa", "1.0.5"), dependencies: [])
+        ])
       }
     }
 
     $0.context("and explicitly requested") {
       $0.it("satisfies using prereleases") {
-        let specs = try resolve(depends("ChocolateChip",["0.2.0"]), sources:[source])
-        try specs.hasSpecification("ChocolateChip", "0.2.0")
-        try specs.hasSpecification("Cocoa", "2.0.0-beta")
-        try expect(specs.count) == 2
+        let graph = try resolve(depends("ChocolateChip",["0.2.0"]), sources:[source], dependencies: [])
+        try expect(graph) ~= DependencyGraph(root: spec("ChocolateChip", "0.2.0"), dependencies: [
+          DependencyGraph(root: spec("Cocoa", "2.0.0-beta"), dependencies: [])
+        ])
       }
     }
   }
@@ -156,9 +202,17 @@ describe("resolve()") {
     ])
 
     $0.it("throws a 'circular reference' error") {
-      try expect(
-        try resolve(depends("Cookie", ["1.0.0"]), sources: [source])
-      ).toThrow(DependencyResolverError.CircularDependency("Cookie", requiredBy: source.specifications))
+      let graph = DependencyGraph(root: spec("Cookie", "1.0.0"), dependencies: [
+        DependencyGraph(root: spec("ChocolateChip", "1.1.0"), dependencies: [
+          DependencyGraph(root: spec("Milk", "2.1.5"), dependencies: [
+            DependencyGraph(root: spec("Cookie", "1.1.0"), dependencies: [])
+          ])
+        ])
+      ])
+      let deps = [depends("Cookie", ["1.0.0"]), depends("ChocolateChip", ["1.1.0"]),
+        depends("Milk", ["2.1.5"]), depends("Cookie", ["1.1.0"])]
+      let error = DependencyResolverError.CircularDependency("Cookie", requiredBy: deps)
+      try expect(try resolve(depends("Cookie", ["1.0.0"]), sources: [source])).toThrow(error)
     }
   }
 
@@ -192,6 +246,51 @@ describe("resolve()") {
       try expect(
         try resolve(dependency, sources: [source])
       ).toThrow(DependencyResolverError.NoSuchDependency(dependency))
+    }
+  }
+
+  $0.context("General dependency resolution") {
+    let skips = ["conflict", "conflict_on_child", "root_conflict_on_child",
+      "simple_with_base", "three_way_conflict", "deep_complex_confict"]
+    let fixturePath = Path(__FILE__) + ".." + ".." + "ConcheSpecs" + "fixtures" + "resolver_integration_specs"
+    let fixtureCase = fixturePath + "case"
+    let fixtureSource = fixturePath + "index"
+    let fixturePaths = fixtureCase.glob("*.json").filter {
+      !skips.contains($0.lastComponentWithoutExtension)
+    }
+
+    if fixturePaths.isEmpty {
+      fatalError("Dependency resolver fixtures not found")
+    }
+
+    for fixturePath in fixturePaths {
+      let fixture = try! fixturePath.readJSON() as! [String: AnyObject]
+      let sourceFileName = (fixture["index"] as? String ?? "awesome") + ".json"
+      let source = try! indexSource(fixtureSource + sourceFileName)
+      let requests = fixture["requested"] as! [String: String]
+      let graphs = fixture["resolved"] as! [[String: AnyObject]]
+      let name = requests.keys.first!
+      let version = requests[name]!
+      let dependency = depends(name, version.isEmpty ? nil : [version])
+
+      $0.it(fixture["name"] as! String) {
+        if graphs.count > 0 {
+          let graph = try resolve(dependency, sources:[source], dependencies: [])
+          try expect(graph) ~= depGraph(graphs[0])
+        } else {
+          switch fixturePath.lastComponent {
+          case "circular.json":
+            let error = DependencyResolverError.CircularDependency("foo", requiredBy: [
+              depends("bar", [">= 0"]), depends("foo", [">= 0"]), depends("foo", [">= 0"])])
+            try expect(try resolve(dependency, sources: [source])).toThrow(error)
+          case "unresolvable_child.json":
+            let error = DependencyResolverError.NoSuchDependency(depends("json", ["<= 1.7.7",">= 1.4.4"]))
+            try expect(try resolve(dependency, sources: [source])).toThrow(error)
+          default:
+            throw failure("Unhandled test case")
+          }
+        }
+      }
     }
   }
 }
