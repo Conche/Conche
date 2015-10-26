@@ -30,9 +30,10 @@ func ~= <E: ExpectationType where E.ValueType == DependencyGraph>(lhs: E, rhs: E
   }
 }
 
-func spec(name:String, _ version:String, _ dependencies:[Dependency]? = nil) -> Specification {
+func spec(name:String, _ version:String, _ dependencies:[Dependency]? = nil, closure: (SpecificationBuilder -> ())? = nil) -> Specification {
   return Specification(name:name, version:try! Version(version)) {
     dependencies?.forEach($0.dependency)
+    closure?($0)
   }
 }
 
@@ -246,6 +247,47 @@ describe("resolve()") {
       try expect(
         try resolve(dependency, sources: [source])
       ).toThrow(DependencyResolverError.NoSuchDependency(dependency))
+    }
+  }
+
+  $0.context("when the root specification has test dependencies") {
+    $0.it("should include the test dependencies in the resolution") {
+      let specification = spec("Testable", "1.0.0") {
+        $0.testSpecification {
+          $0.dependency("Spectre")
+        }
+      }
+
+      let source = InMemorySource(specifications: [
+        specification,
+        spec("Spectre", "1.0.0")
+      ])
+      let dependency = depends("Testable", ["1.0.0"])
+      let specifications = try resolve(dependency, sources: [source])
+
+      try expect(specifications.count) == 2
+    }
+
+    $0.it("should not include the test dependencies dependencies in the resolution") {
+      let specification = spec("Testable", "1.0.0") {
+        $0.testSpecification {
+          $0.dependency("Spectre")
+        }
+      }
+      let spectreSpecification = spec("Spectre", "1.0.0") {
+        $0.testSpecification {
+          $0.dependency("SpectreDependency")
+        }
+      }
+
+      let source = InMemorySource(specifications: [
+        specification,
+        spectreSpecification
+      ])
+      let dependency = depends("Testable", ["1.0.0"])
+      let specifications = try resolve(dependency, sources: [source])
+
+      try expect(specifications.count) == 2
     }
   }
 

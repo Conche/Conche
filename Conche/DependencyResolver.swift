@@ -38,14 +38,14 @@ func resolveTestDependencies(testSpecification: TestSpecification?, sources: [So
 /// Resolves a dependency with the given sources and returns
 /// the collection of resolved specifications
 public func resolve(dependency: Dependency, sources: [SourceType]) throws -> [Specification] {
-  return try resolve(dependency, sources: sources, dependencies: []).flatten()
+  return try resolve(dependency, sources: sources, dependencies: [], resolveTestSpecifications: true).flatten()
 }
 
 /// Resolve a dependency with the given sources, iteratively
 /// adding all known dependencies from previous resolutions
 /// in the dependency tree, returning the collection of resolved
 /// specifications
-public func resolve(dependency: Dependency, sources: [SourceType], dependencies: [Dependency]) throws -> DependencyGraph {
+public func resolve(dependency: Dependency, sources: [SourceType], dependencies: [Dependency], resolveTestSpecifications: Bool = false) throws -> DependencyGraph {
   var specifications = search(dependency.combine(dependencies.filter { $0.name == dependency.name }), sources: sources)
   while let specification = specifications.popFirst() {
     do {
@@ -53,7 +53,11 @@ public func resolve(dependency: Dependency, sources: [SourceType], dependencies:
       if duplicates.count > 1 {
         throw DependencyResolverError.CircularDependency(specification.name, requiredBy: dependencies)
       }
-      let resolution: [DependencyGraph] = try specification.dependencies.map {
+      var specificationDependencies = specification.dependencies
+      if resolveTestSpecifications, let testDependencies = specification.testSpecification?.dependencies {
+        specificationDependencies += testDependencies
+      }
+      let resolution: [DependencyGraph] = try specificationDependencies.map {
         let specDeps = dependencies + specification.dependencies
         return try resolve($0, sources: sources, dependencies: specDeps)
       }.sort().uniq()

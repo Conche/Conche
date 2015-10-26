@@ -42,12 +42,12 @@ public struct Specification : CustomStringConvertible {
     self.source = nil
     self.sourceFiles = []
     self.entryPoints = [:]
-    self.testSpecification = nil
 
     let builder = BaseSpecificationBuilder()
     closure?(builder)
-    self.dependencies = builder.dependencies
-    self.libraries = builder.libraries
+    dependencies = builder.dependencies
+    libraries = builder.libraries
+    testSpecification = builder.testSpecification
   }
 
   public var description: String {
