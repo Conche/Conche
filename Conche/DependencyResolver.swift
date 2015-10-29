@@ -1,7 +1,7 @@
 /// Resolves a dependency with the given sources and returns
-/// the collection of resolved specifications
-public func resolve(dependency: Dependency, sources: [SourceType]) throws -> [Specification] {
-  return try resolve(dependency, sources: sources, dependencies: [], resolveTestSpecifications: true).flatten()
+/// a dependency graph of resolved dependencies
+public func resolve(dependency: Dependency, sources: [SourceType]) throws -> DependencyGraph {
+  return try resolve(dependency, sources: sources, dependencies: [], resolveTestSpecifications: true)
 }
 
 /// Resolve a dependency with the given sources, iteratively

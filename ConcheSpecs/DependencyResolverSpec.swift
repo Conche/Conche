@@ -9,9 +9,9 @@ extension Path {
   }
 }
 
-extension CollectionType where Generator.Element == Specification {
+extension DependencyGraph {
   func hasSpecification(name:String, _ version:String) throws {
-    let items = filter { $0.name == name && $0.version.description == version }
+    let items = flatten().filter { $0.name == name && $0.version.description == version }
     if items.isEmpty {
       let descriptions = items.map { $0.description }
       throw failure("Collection did not contain \(name)-\(version): \(descriptions)")
@@ -222,9 +222,9 @@ describe("resolve()") {
     let source2 = InMemorySource(specifications: [spec("Cookie","1.0.0")])
 
     $0.it("resolves to a single specification") {
-      let specs = try resolve(depends("Cookie",["1.0.0"]), sources:[source1, source2])
-      try specs.hasSpecification("Cookie", "1.0.0")
-      try expect(specs.count) == 1
+      let graph = try resolve(depends("Cookie",["1.0.0"]), sources:[source1, source2])
+      try graph.hasSpecification("Cookie", "1.0.0")
+      try expect(graph.flatten().count) == 1
     }
   }
 
@@ -263,7 +263,7 @@ describe("resolve()") {
         spec("Spectre", "1.0.0")
       ])
       let dependency = depends("Testable", ["1.0.0"])
-      let specifications = try resolve(dependency, sources: [source])
+      let specifications = try resolve(dependency, sources: [source]).flatten()
 
       try expect(specifications.count) == 2
     }
@@ -285,7 +285,7 @@ describe("resolve()") {
         spectreSpecification
       ])
       let dependency = depends("Testable", ["1.0.0"])
-      let specifications = try resolve(dependency, sources: [source])
+      let specifications = try resolve(dependency, sources: [source]).flatten()
 
       try expect(specifications.count) == 2
     }

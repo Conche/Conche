@@ -32,15 +32,15 @@ func buildTask() throws -> Task {
   let cpSource = GitFilesystemSource(name: "CocoaPods", uri: "https://github.com/CocoaPods/Specs")
   let localSource = LocalFilesystemSource(path: Path.current)
   let dependency = try Dependency(name: spec.name, requirements: [Requirement(spec.version.description)])
-  let specifications: [Specification]
+  let dependencyGraph: DependencyGraph
   do {
-    specifications = try resolve(dependency, sources: [localSource, cpSource])
+    dependencyGraph = try resolve(dependency, sources: [localSource, cpSource])
   } catch {
     try cpSource.update()
-    specifications = try resolve(dependency, sources: [localSource, cpSource])
+    dependencyGraph = try resolve(dependency, sources: [localSource, cpSource])
   }
 
-  let tasks: [SpecificationBuildTask] = try specifications.map { specification in
+  let tasks: [SpecificationBuildTask] = try dependencyGraph.flatten().map { specification in
     let source: Path
     if specification.name == spec.name {
       source = Path.current
