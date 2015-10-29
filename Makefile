@@ -4,7 +4,7 @@ LIBS = $(foreach lib,$(DEPENDENCIES),.conche/lib/lib$(lib).dylib)
 SWIFTC := xcrun -sdk macosx swiftc
 SWIFTFLAGS = $(addprefix -l, $(DEPENDENCIES))
 
-SOURCES = Dependency DependencyResolver DependencyResolverError Downloader \
+SOURCES = Dependency DependencyGraph DependencyResolver DependencyResolverError Downloader \
 		  Source Specification SpecificationBuilder Invoke Version \
 		  Task Tasks/SpecificationTask Tasks/ModuleBuildTask build test
 SOURCE_FILES = $(foreach file,$(SOURCES),Conche/$(file).swift)
