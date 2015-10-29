@@ -20,8 +20,6 @@ class ModuleBuildTask : Task {
   /// Libraries to link the module against
   let libraries: [String]
 
-  var dependencies = [Task]()
-
   init(name: String, sources: [Path], moduleSearchPath: Path, librarySearchPath: Path, libraries: [String]? = nil) {
     self.moduleName = name
     self.sources = sources
@@ -31,14 +29,10 @@ class ModuleBuildTask : Task {
   }
 
   var name: String {
-    return "Building \(moduleName)"
+    return "Building \(moduleName) Module"
   }
 
   var isRequired: Bool {
-    if !libraries.isEmpty {
-      return true  // We don't correctly track dependencies yet
-    }
-
     let outputFiles = [ libraryDestination, moduleDestination ]
 
     if let lastModified = sources.lastModified, outputModified = outputFiles.lastModified {

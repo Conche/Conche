@@ -17,7 +17,8 @@ extension Task {
 
 func runTask(task: Task) throws {
   func innerRunTask(task: Task) throws -> Bool {
-    let didRun = try task.dependencies.map { try innerRunTask($0) }.filter { $0 }.first ?? false
+    let results = try task.dependencies.map { try innerRunTask($0) }
+    let didRun = results.filter { $0 }.first ?? false
 
     if didRun || task.isRequired {
       print("-> \(task.name)")

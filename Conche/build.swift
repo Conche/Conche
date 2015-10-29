@@ -28,6 +28,10 @@ func buildTask() throws -> Task {
   if !conchePath.exists {
     try conchePath.mkdir()
   }
+  let moddir = conchePath + "modules"
+  if !moddir.exists { try moddir.mkdir() }
+  let libdir = conchePath + "lib"
+  if !libdir.exists { try libdir.mkdir() }
 
   let cpSource = GitFilesystemSource(name: "CocoaPods", uri: "https://github.com/CocoaPods/Specs")
   let localSource = LocalFilesystemSource(path: Path.current)
@@ -40,19 +44,7 @@ func buildTask() throws -> Task {
     dependencyGraph = try resolve(dependency, sources: [localSource, cpSource])
   }
 
-  let tasks: [SpecificationBuildTask] = try dependencyGraph.flatten().map { specification in
-    let source: Path
-    if specification.name == spec.name {
-      source = Path.current
-    } else {
-      source = dependencyPath(conchePath, specification)
-    }
-
-    return try SpecificationBuildTask(specification: specification, source: source, destination: conchePath)
-  }.reverse()
-
-  let task = tasks[0]
-  task.dependencies += tasks[1..<tasks.endIndex].map { $0 as Task }
+  let task = try dependencyGraph.buildTask()
 
   if let cliEntryPoints = spec.entryPoints["cli"] {
     if !cliEntryPoints.isEmpty {
@@ -62,7 +54,7 @@ func buildTask() throws -> Task {
           try bindir.mkdir()
         }
 
-        let libraries = tasks.map { $0.specification.name } + [spec.name]
+        let libraries = dependencyGraph.flatten().map { $0.name } + [spec.name]
         let flags = libraries.map { "-l\($0)" }.joinWithSeparator(" ")
 
         for (name, source) in cliEntryPoints {
