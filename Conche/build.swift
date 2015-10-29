@@ -22,6 +22,20 @@ func downloadDependencies(conchePath: Path, specifications: [Specification]) thr
   }
 }
 
+func resolve(specification: Specification) throws -> DependencyGraph {
+  let cpSource = GitFilesystemSource(name: "CocoaPods", uri: "https://github.com/CocoaPods/Specs")
+  let localSource = LocalFilesystemSource(path: Path.current)
+  let dependency = try Dependency(name: specification.name, requirements: [Requirement(specification.version.description)])
+  let dependencyGraph: DependencyGraph
+  do {
+    dependencyGraph = try resolve(dependency, sources: [localSource, cpSource])
+  } catch {
+    try cpSource.update()
+    dependencyGraph = try resolve(dependency, sources: [localSource, cpSource])
+  }
+  return dependencyGraph
+}
+
 func buildTask() throws -> Task {
   let spec = try findPodspec()
   let conchePath = Path(".conche")
@@ -33,17 +47,7 @@ func buildTask() throws -> Task {
   let libdir = conchePath + "lib"
   if !libdir.exists { try libdir.mkdir() }
 
-  let cpSource = GitFilesystemSource(name: "CocoaPods", uri: "https://github.com/CocoaPods/Specs")
-  let localSource = LocalFilesystemSource(path: Path.current)
-  let dependency = try Dependency(name: spec.name, requirements: [Requirement(spec.version.description)])
-  let dependencyGraph: DependencyGraph
-  do {
-    dependencyGraph = try resolve(dependency, sources: [localSource, cpSource])
-  } catch {
-    try cpSource.update()
-    dependencyGraph = try resolve(dependency, sources: [localSource, cpSource])
-  }
-
+  let dependencyGraph = try resolve(spec)
   let task = try dependencyGraph.buildTask()
 
   if let cliEntryPoints = spec.entryPoints["cli"] {
@@ -76,4 +80,75 @@ func buildTask() throws -> Task {
 
 public func build() throws {
   try runTask(try buildTask())
+}
+
+public func install(destination: String) throws {
+  let destinationPath = Path(destination)
+  let conchePath = Path(".conche")
+
+  try destinationPath.mkpath()
+
+  let specification = try findPodspec()
+  guard let cliEntryPoints = specification.entryPoints["cli"] where !cliEntryPoints.isEmpty else {
+    throw Error("\(specification.name) does not have any installable tools.")
+  }
+
+  let task = AnonymousTask("Installing \(specification.name)") {
+    let destinationBinDir = destinationPath + "bin"
+    let destinationLibDir = destinationPath + "lib" + specification.name
+
+    try destinationBinDir.mkpath()
+    try destinationLibDir.mkpath()
+
+    // Copy libraries
+    let dependencyGraph = try resolve(specification)
+    let specifications = dependencyGraph.flatten()
+    let libraries = specifications.map { $0.name }
+
+    for library in libraries {
+      let source: Path = conchePath + "lib" + "lib\(library).dylib"
+      let destination = destinationLibDir + "lib\(library).dylib"
+      if destination.exists {
+        try destination.delete()
+      }
+      try source.copy(destination)
+    }
+
+    // Update library search paths
+    func updateSearchPath(dependency: String, binary: Path) throws {
+      try invoke("install_name_tool", [
+        "-change",
+        ".conche/lib/lib\(dependency).dylib",
+        "@executable_path/../lib/\(specification.name)/lib\(dependency).dylib",
+        binary.description,
+      ])
+    }
+    func updateLibSearchPath(dependencyGraph: DependencyGraph) throws {
+      let library = destinationLibDir + "lib\(dependencyGraph.root.name).dylib"
+      for dependency in dependencyGraph.dependencies {
+        try updateSearchPath(dependency.root.name, binary: library)
+      }
+
+      try dependencyGraph.dependencies.forEach(updateLibSearchPath)
+    }
+    try updateLibSearchPath(dependencyGraph)
+
+    // Copy binary
+    for (entryPoint, _) in cliEntryPoints {
+      let source: Path = conchePath + "bin" + entryPoint
+      let destination = destinationBinDir + entryPoint
+      if destination.exists {
+        try destination.delete()
+      }
+      try source.copy(destination)
+
+      for specification in dependencyGraph.flatten() {
+        try updateSearchPath(specification.name, binary: destination)
+      }
+      try updateSearchPath(specification.name, binary: destination)
+    }
+  }
+
+  task.dependencies.append(try buildTask())
+  try runTask(task)
 }

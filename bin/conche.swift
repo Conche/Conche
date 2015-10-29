@@ -34,4 +34,8 @@ Group {
     try paths.filter { $0.exists }.forEach { try $0.delete() }
     print("Cleaned")
   }
+
+  $0.command("install", Option("prefix", "/usr/local")) { `prefix` in
+    try install(`prefix`)
+  }
 }.run("0.3.0")
