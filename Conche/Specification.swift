@@ -184,37 +184,6 @@ extension Specification {
 
     return sourceFiles
   }
-
-  public func build(source:Path, destination:Path) throws {
-    let sourceFiles = try computeSourceFiles(source)
-    let source = sourceFiles.map { $0.description }.joinWithSeparator(" ")
-    let libraries = self.libraries + dependencies.map { $0.name }
-    let flags = libraries.map { "-l\($0)" }.joinWithSeparator(" ")
-
-    let libdir = destination + "lib"
-    if !libdir.exists {
-      try libdir.mkdir()
-    }
-    let library = libdir + "lib\(name).dylib"
-    let moduledir = destination + "modules"
-    if !moduledir.exists {
-      try moduledir.mkdir()
-    }
-    let module = moduledir + "\(name).swiftmodule"
-
-    if let lastModified = sourceFiles.lastModified {
-      if library.exists && lastModified < library.lastModified &&
-         module.exists && lastModified < module.lastModified &&
-         dependencies.isEmpty  // We don't yet track updated dependencies
-      {
-        return
-      }
-    }
-
-    // TODO, respect specifications module name
-    // TODO support spec's frameworks
-    try swiftc(["-I", moduledir.description, "-L", libdir.description, flags, "-module-name", name, "-emit-library", "-emit-module", "-emit-module-path", module.description, source, "-o", library.description])
-  }
 }
 
 extension Path {
@@ -252,4 +221,3 @@ extension timespec : CustomStringConvertible {
     return "\(tv_sec)"
   }
 }
-

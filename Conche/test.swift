@@ -3,7 +3,6 @@ import PathKit
 
 
 public func test(files: [String]) throws {
-  let conchePath = Path(".conche")
   let spec = try findPodspec()
 
   if let testSpecification = spec.testSpecification {
@@ -12,11 +11,7 @@ public func test(files: [String]) throws {
       throw Error("Spectre (https://github.com/kylef/Spectre) is the only supported testing framework at the moment.")
     }
 
-    var tasks = try buildTasks()
-
-    let cpSource = GitFilesystemSource(name: "CocoaPods", uri: "https://github.com/CocoaPods/Specs")
-    let testSpecifications = try resolveTestDependencies(spec.testSpecification, sources: [cpSource])
-    tasks += testSpecifications.reverse().map(buildSpecificationTask(conchePath))
+    var tasks: [Task] = [try buildTask()]
 
     let buildTestTask = AnonymousTask("Building Specs") {
       let testFiles: [Path]
@@ -30,7 +25,7 @@ public func test(files: [String]) throws {
         testFiles = files.map { Path($0) }
       }
 
-      let specNames = spec.dependencies.map { $0.name } + testSpecifications.map { $0.name } + [spec.name]
+      let specNames = spec.dependencies.map { $0.name } + testSpecification.dependencies.map { $0.name } + [spec.name]
       let flags = specNames.map { "-l\($0)" }.joinWithSeparator(" ")
       let swiftFlags = "-I .conche/modules -L .conche/lib \(flags)"
       let testFile: Path

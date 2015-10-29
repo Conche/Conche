@@ -30,11 +30,6 @@ public struct DependencyGraph : CustomStringConvertible {
   }
 }
 
-func resolveTestDependencies(testSpecification: TestSpecification?, sources: [SourceType]) throws -> [Specification] {
-  let testDependencies = try testSpecification?.dependencies.map { try resolve($0, sources: sources) } ?? []
-  return testDependencies.reduce([], combine: +)
-}
-
 /// Resolves a dependency with the given sources and returns
 /// the collection of resolved specifications
 public func resolve(dependency: Dependency, sources: [SourceType]) throws -> [Specification] {

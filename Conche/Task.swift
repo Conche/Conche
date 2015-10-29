@@ -34,9 +34,11 @@ func runTask(task: Task) throws {
 class AnonymousTask : Task {
   let name: String
   let closure: () throws -> ()
+  var dependencies: [Task]
 
-  init(_ name: String, closure: () throws -> ()) {
+  init(_ name: String, dependencies: [Task]? = nil, closure: () throws -> ()) {
     self.name = name
+    self.dependencies = dependencies ?? []
     self.closure = closure
   }
 

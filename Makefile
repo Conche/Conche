@@ -5,8 +5,8 @@ SWIFTC := xcrun -sdk macosx swiftc
 SWIFTFLAGS = $(addprefix -l, $(DEPENDENCIES))
 
 SOURCES = Dependency DependencyResolver DependencyResolverError Downloader \
-		  Source Specification SpecificationBuilder Task \
-		  Tasks/SpecificationTask Invoke Version build test
+		  Source Specification SpecificationBuilder Invoke Version \
+		  Task Tasks/SpecificationTask Tasks/ModuleBuildTask build test
 SOURCE_FILES = $(foreach file,$(SOURCES),Conche/$(file).swift)
 
 

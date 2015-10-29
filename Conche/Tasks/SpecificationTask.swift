@@ -10,7 +10,7 @@ class SpecificationDownloadTask : Task {
   }
 
   var name: String {
-    return "Downloading \(specification.name) \(specification.version)"
+    return "Downloading \(specification.name) (\(specification.version))"
   }
 
   var isRequired: Bool {
@@ -30,43 +30,27 @@ class SpecificationBuildTask : Task {
   let specification: Specification
   let source: Path
   let destination: Path
+  var dependencies: [Task]
 
-  init(specification: Specification, source: Path, destination: Path) {
+  init(specification: Specification, source: Path, destination: Path) throws {
     self.specification = specification
     self.source = source
     self.destination = destination
+
+    let moduleSearchPath = destination + "modules"
+    let librarySearchPath = destination + "lib"
+
+    dependencies = []
+
+    let downloadTask = SpecificationDownloadTask(specification: specification, destination: source)
+    let moduleBuildTask = try specification.moduleBuildTask(source, moduleSearchPath: moduleSearchPath, librarySearchPath: librarySearchPath)
+    moduleBuildTask.dependencies.append(downloadTask)
+    dependencies.append(moduleBuildTask)
   }
 
   var name: String {
     return "Building \(specification.name)"
   }
 
-  var isRequired: Bool {
-    if !specification.dependencies.isEmpty {
-      return true  // We don't correctly track dependencies yet
-    }
-
-    let outputFiles = [
-      destination + "lib" + "lib\(specification.name).dylib",
-      destination + "modules" + "\(specification.name).swiftmodule",
-    ]
-
-    if let lastModified = try? specification.computeSourceFiles(source).lastModified,
-           outputModified = outputFiles.lastModified {
-      let outputExists = outputFiles.map { $0.exists }.filter { $0 == false }.first ?? true
-      return !outputExists || lastModified > outputModified
-    }
-
-    return true
-  }
-
-  var dependencies: [Task] {
-    return [
-      SpecificationDownloadTask(specification: specification, destination: source)
-    ]
-  }
-
-  func run() throws {
-    try specification.build(source, destination: destination)
-  }
+  func run() throws {}
 }
