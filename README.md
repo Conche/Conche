@@ -1,6 +1,6 @@
 # Conche
 
-[![Build Status](http://img.shields.io/travis/kylef/Conche/master.svg?style=flat)](https://travis-ci.org/kylef/Conche)
+[![Build Status](https://img.shields.io/travis/kylef/Conche/master.svg?style=flat)](https://travis-ci.org/kylef/Conche)
 
 Conche is a Swift build system.
 
@@ -15,7 +15,7 @@ $ brew install --HEAD kylef/formulae/conche
 If you don't have Homebrew, Conche can be installed using the Makefile:
 
 ```shell
-$ git clone --recursive https://github.com/kylef/Conche
+$ git clone --recursive https://github.com/Conche/Conche
 $ cd Conche
 $ make install
 ```
@@ -98,7 +98,7 @@ Linux.
 
 Currently it does not, however it's built with other operating systems
 in-mind and it would be trivial to add support for other platforms once Swift
-is finally opened sourced. See [#7](https://github.com/kylef/Conche/issues/7).
+is finally opened sourced. See [#7](https://github.com/Conche/Conche/issues/7).
 
 #### Can I build an OS X, iOS, watchOS, tvOS application with Conche?
 
