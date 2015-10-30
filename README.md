@@ -1,6 +1,6 @@
 # Conche
 
-[![Build Status](https://img.shields.io/travis/kylef/Conche/master.svg?style=flat)](https://travis-ci.org/kylef/Conche)
+[![Build Status](https://img.shields.io/travis/Conche/Conche/master.svg?style=flat)](https://travis-ci.org/Conche/Conche)
 
 Conche is a Swift build system.
 
