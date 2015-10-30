@@ -41,8 +41,9 @@ Group {
 
   $0.command("init",
              Flag("with-tests", `default`: false),
+             Flag("with-cli", `default`: false),
              Argument<String>("name")
-  ) { withTests, name in
-    try initCommand(name, withTests: withTests)
+  ) { withTests, withCLI, name in
+    try initCommand(name, withCLI: withCLI, withTests: withTests)
   }
 }.run("0.3.0")
