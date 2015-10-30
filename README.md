@@ -2,12 +2,35 @@
 
 [![Build Status](http://img.shields.io/travis/kylef/Conche/master.svg?style=flat)](https://travis-ci.org/kylef/Conche)
 
-A native Swift build system and dependency manager.
+Conche is a Swift build system.
+
+## Installation
+
+The easiest way to install Conche is with Homebrew:
+
+```shell
+$ brew install --HEAD kylef/formulae/conche
+```
+
+If you don't have Homebrew, Conche can be installed using the Makefile:
+
+```shell
+$ git clone --recursive https://github.com/kylef/Conche
+$ cd Conche
+$ make install
+```
 
 ## Usage
 
-Conche uses information about your library described in it's podspec, including
-any dependencies.
+To get started with Conche, you can use `conche init` to create your first project.
+
+```bash
+$ conche init HelloWorld --with-tests
+Initialised HelloWorld.
+```
+
+Conche uses the standard JSON podspec format to build your library. In your
+podspec you can declare the source files, and dependencies used for your project.
 
 ```shell
 $ conche build
@@ -21,6 +44,17 @@ Building Conche
 Building Entry Points
 -> conche -> .conche/bin/conche
 ```
+
+You can use Conche in conjunction with the [Spectre](https://github.com/kylef/Spectre) BDD testing library.
+
+```shell
+$ conche test
+```
+
+### Entry Points
+
+If you are building a command line tool, you can add each command line tool
+you want to provide in the cli entry point section in your podspec.
 
 ```json
 {
@@ -39,54 +73,23 @@ Building Entry Points
 }
 ```
 
-**NOTE**: *`entry_points` is an extension to a podspec allowing you to create CLIs.*
-
-You can execute your tool via `conche` after built.
+You can execute your tool via `conche` after it's built.
 
 ```shell
 $ conche exec <NAME>
 ```
 
-### Testing
-
-You can use Conche in conjunction with the [Spectre](https://github.com/kylef/Spectre) BDD testing library.
+You can install the CLI entry points to your system using Conche.
 
 ```shell
-$ conche test
+$ conche install
 ```
-
-## Installation
-
-### Homebrew
-
-```shell
-$ brew install --HEAD kylef/formulae/conche
-```
-
-### Other
-
-```shell
-$ git clone --recursive https://github.com/kylef/Conche
-$ cd Conche
-$ make install
-```
-
-## Status
-
-Conche is currently a MVP and is missing many features.
-
-### Missing Features
-
-- Support for various components of a podspec, such as frameworks, resources,
-  etc.
-- Support for CocoaPods subspecs.
-- Private spec repositories.
 
 ### FAQ
 
 #### I want to use Xcode.
 
-Conche is probably not for you, I'd suggest you take a look at CocoaPods
+Conche is probably not for you, I'd suggest you take a look at [CocoaPods](https://cocoapods.org/)
 instead which offers Xcode integration. The purpose of Conche is that it is a
 build system separate from Xcode which can work on various platforms such as
 Linux.
@@ -110,4 +113,3 @@ requests are welcome.
 #### Can Conche build Conche?
 
 Of course.
-

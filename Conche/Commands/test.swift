@@ -1,6 +1,23 @@
 import Darwin
 import PathKit
 
+/*
+/// A task for building Spectre specs
+class SpectreSpecsBuildTask : Task {
+  init(sourceFiles: [Path], libraries: [String]) {
+
+  }
+
+  func run() throws {
+
+  }
+
+  internal func x() {
+
+  }
+}
+*/
+
 
 public func test(files: [String]) throws {
   let spec = try findPodspec()

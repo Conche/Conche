@@ -6,7 +6,8 @@ SWIFTFLAGS = $(addprefix -l, $(DEPENDENCIES))
 
 SOURCES = Dependency DependencyGraph DependencyResolver DependencyResolverError Downloader \
 		  Source Specification SpecificationBuilder Invoke Version \
-		  Task Tasks/SpecificationTask Tasks/ModuleBuildTask build test
+		  Task Tasks/SpecificationTask Tasks/ModuleBuildTask \
+		  Commands/build Commands/test Commands/init
 SOURCE_FILES = $(foreach file,$(SOURCES),Conche/$(file).swift)
 
 

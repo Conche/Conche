@@ -38,4 +38,11 @@ Group {
   $0.command("install", Option("prefix", "/usr/local")) { `prefix` in
     try install(`prefix`)
   }
+
+  $0.command("init",
+             Flag("with-tests", `default`: false),
+             Argument<String>("name")
+  ) { withTests, name in
+    try initCommand(name, withTests: withTests)
+  }
 }.run("0.3.0")
