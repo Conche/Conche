@@ -1,4 +1,5 @@
 import Darwin.libc
+import PathKit
 
 
 struct InvocationError : ErrorType {
@@ -18,6 +19,15 @@ func invoke(command:String, _ arguments:[String]) throws {
   if code != 0 {
     throw InvocationError(command: command, arguments: arguments, code: code)
   }
+}
+
+public func which(command: String) -> String? {
+  let path = String.fromCString(getenv("PATH")) ?? ""
+  return path.characters.split { $0 == ":" }
+                        .map(String.init)
+                        .map { Path($0) + command }
+                        .filter { $0.exists }
+                        .map { $0.description }.first
 }
 
 func swiftc(arguments: [String]) throws {

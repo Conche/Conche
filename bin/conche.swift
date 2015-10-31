@@ -45,8 +45,19 @@ Group {
   $0.command("init",
              Flag("with-tests", `default`: false),
              Flag("with-cli", `default`: false),
-             Argument<String>("name")
+             Argument<String>("name"),
+             description: "Crete a new Conche project"
   ) { withTests, withCLI, name in
     try initCommand(name, withCLI: withCLI, withTests: withTests)
+  }
+
+  $0.unknownCommand = { name, parser in
+    let executable = "conche-\(name)"
+
+    if let path = which(executable) {
+      exit(system("\(path) \(parser)"))
+    }
+
+    throw GroupError.UnknownCommand(name)
   }
 }.run("0.3.0")
