@@ -16,7 +16,7 @@ Group {
   $0.command("exec") { (command:String, parser:ArgumentParser) in
     let exec = "\(command) \(parser)"
     let conchePath = Path(".conche").absolute() + "bin"
-    system("PATH=\(conchePath) \(exec)")
+    exit(system("PATH=\(conchePath) \(exec)"))
   }
 
   $0.command("clean", Flag("full")) { (full:Bool) in
