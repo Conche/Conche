@@ -43,11 +43,17 @@ public func resolve(dependency: Dependency, sources: [SourceType], dependencies:
 /// Searches available sources for dependencies, filtering out
 /// pre-release versions if not explicitly requested
 private func search(dependency: Dependency, sources: [SourceType]) -> ArraySlice<Specification> {
-  var specifications = sources.map { $0.search(dependency) }.reduce([], combine: +).sort()
-  if !dependency.usePreRelease() {
-    specifications = specifications.removePreReleases()
+  for source in sources {
+    var specifications = source.search(dependency).sort()
+    if !specifications.isEmpty {
+      if !dependency.usePreRelease() {
+        specifications = specifications.removePreReleases()
+      }
+      return specifications[0..<specifications.endIndex]
+    }
   }
-  return specifications[0..<specifications.endIndex]
+
+  return []
 }
 
 /// Search available sources for dependencies, which are used
