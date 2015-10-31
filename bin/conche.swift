@@ -60,4 +60,4 @@ Group {
 
     throw GroupError.UnknownCommand(name)
   }
-}.run("0.3.0")
+}.run("0.5.0")
