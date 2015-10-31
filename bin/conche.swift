@@ -19,7 +19,10 @@ Group {
     exit(system("PATH=\(conchePath) \(exec)"))
   }
 
-  $0.command("clean", Flag("full")) { (full:Bool) in
+  $0.command("clean",
+             Flag("full", description: "Completely removes source files for all dependencies"),
+             description: "Removes build artifacts")
+  { (full:Bool) in
     var paths = [Path]()
     let conchePath = Path(".conche")
 
