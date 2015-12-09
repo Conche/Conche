@@ -1,4 +1,6 @@
+#if !os(Linux)
 import Darwin
+#endif
 import Foundation
 import PathKit
 
@@ -186,6 +188,7 @@ extension Specification {
   }
 }
 
+#if !os(Linux)
 extension Path {
   private var stats: stat {
     var stats = stat()
@@ -221,3 +224,4 @@ extension timespec : CustomStringConvertible {
     return "\(tv_sec)"
   }
 }
+#endif

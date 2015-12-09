@@ -33,13 +33,14 @@ class ModuleBuildTask : Task {
   }
 
   var isRequired: Bool {
+#if !os(Linux)
     let outputFiles = [ libraryDestination, moduleDestination ]
 
     if let lastModified = sources.lastModified, outputModified = outputFiles.lastModified {
       let outputExists = outputFiles.map { $0.exists }.filter { $0 == false }.first ?? true
       return !outputExists || lastModified > outputModified
     }
-
+#endif
     return true
   }
 

@@ -1,5 +1,10 @@
+#if os(Linux)
+import Glibc
+#else
 import Darwin
+#endif
 import PathKit
+
 
 func dependencyPath(conchePath:Path, _ spec:Specification) -> Path {
   let packagesPath = conchePath + "packages"
