@@ -6,7 +6,7 @@ Conche is a Swift build system.
 
 ## Project Status
 
-After the release of Conche, Apple supprised us and release the Swift Package Manager (SPM) and therefore this project isn't applicable. I'd suggest you instead take a look at SPM and use that over Conche.
+After the release of Conche, Apple surprised us and release the Swift Package Manager (SPM) and therefore this project isn't applicable. I'd suggest you instead take a look at SPM and use that over Conche.
 
 ## Installation
 
